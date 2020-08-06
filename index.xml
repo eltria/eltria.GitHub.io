@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>我的世界</title>
+    <link>https://eltria.github.io/</link>
+    <description>Recent content on 我的世界</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-cn</language>
+    <lastBuildDate>Fri, 17 Jul 2020 20:35:13 +0800</lastBuildDate>
+    
+	<atom:link href="https://eltria.github.io/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Github page 建站教程</title>
+      <link>https://eltria.github.io/post/build_site/</link>
+      <pubDate>Fri, 17 Jul 2020 20:35:13 +0800</pubDate>
+      
+      <guid>https://eltria.github.io/post/build_site/</guid>
+      <description>建站 背景 一直想说要弄个博客,但是一直没有机会,今天正好有这个机缘,就在github page上搞了blog这个事情 目前是基于hugo + github pag</description>
+    </item>
+    
+    <item>
+      <title>First</title>
+      <link>https://eltria.github.io/post/first/</link>
+      <pubDate>Fri, 17 Jul 2020 20:32:34 +0800</pubDate>
+      
+      <guid>https://eltria.github.io/post/first/</guid>
+      <description>大家好,这是我的第一篇博客!</description>
+    </item>
+    
+  </channel>
+</rss>

@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=no"/>
+  <title>Github page 建站教程</title>
+  <link href="https://eltria.github.io/css/materialize.min.css" type="text/css" rel="stylesheet" media="screen,projection"/>
+  <link href="https://eltria.github.io/css/style.css" type="text/css" rel="stylesheet" media="screen,projection"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.6/styles/default.min.css">
+  <style type="text/css">
+  
+    footer.page-footer{background-image: url(https://eltria.github.io/images/default.png);}
+  
+  </style>
+</head>
+<body>
+  <ul id="slide-out" class="side-nav">
+    <li><a href="https://eltria.github.io"><i class="mdi-action-home left"></i>Home<i class="mdi-hardware-keyboard-arrow-right right"></i></a></li>
+    <li><a href="https://eltria.github.io/categories"><i class="mdi-action-perm-media left"></i>Categories<i class="mdi-hardware-keyboard-arrow-right right"></i></a></li>
+    <li><a href="https://eltria.github.io/tags"><i class="mdi-action-loyalty left"></i>Tags<i class="mdi-hardware-keyboard-arrow-right right"></i></a></li>
+  </ul>
+  <div id="index-banner" class="parallax-container">
+  <a data-activates="slide-out" class="btn-floating button-collapse" style="top: 5px; left: 5px;"><i class="mdi-navigation-menu"></i></a>
+    <div class="section no-pad-bot">
+      <div class="container">
+        
+        <h1 class="header center teal-text text-lighten-2">我的世界</h1>
+        <div class="row center">
+          <h5 class="header col s12 light">Hugo theme even example site.</h5>
+        </div>
+        <div class="row center">
+        
+        
+        
+        
+        
+        
+          <a href="https://eltria.github.io/index.xml"><img src="https://eltria.github.io/images/feed-dreamstale27.png"></a>
+        </div>
+      </div>
+    </div>
+    <div class="parallax">
+    
+      <img src="https://eltria.github.io/images/default.png">
+    
+    </div>
+  </div>
+
+
+
+<div class="container">
+  <div class="section">
+
+    <div class="row">
+      <div class="col s12">
+        <div class="card-panel">
+          <h4>Github page 建站教程</h4>
+          <p>
+           
+          </p>
+          <p><p>建站</p>
+<h1 id="背景">背景</h1>
+<p>一直想说要弄个博客,但是一直没有机会,今天正好有这个机缘,就在github page上搞了blog这个事情
+目前是基于hugo + github page来做的博客</p>
+<h1 id="github-page配置相关">github page配置相关</h1>
+<p>傻瓜模式下其实这边也基本没有什么可以说的配置</p>
+<ol>
+<li>
+<p>点击创建库
+<img src="https://tva1.sinaimg.cn/large/007S8ZIlly1gfkvjcny6lj31mm0lgaj3.jpg" alt="">{:class=&quot;img-responsive&rdquo;}</p>
+</li>
+<li>
+<p>取名字
+<img src="https://tva1.sinaimg.cn/large/007S8ZIlly1gfkvl9ay71j30vp0u0n37.jpg" alt=""></p>
+</li>
+</ol>
+<p>这边结束之后基本就没有github什么事情了</p>
+<h1 id="hugo配置">hugo配置</h1>
+<ol>
+<li>安装hugo</li>
+</ol>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">brew install hugo
+</code></pre></td></tr></table>
+</div>
+</div><p>这边用的是mac的homebrew,如果是其他系统的话找各自的方法</p>
+<ol start="2">
+<li>新建hugo文件夹</li>
+</ol>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">hugo new blog
+</code></pre></td></tr></table>
+</div>
+</div><p><img src="https://tva1.sinaimg.cn/large/007S8ZIlly1gfkvpw94kcj30am0hcta2.jpg" alt="">
+新建好的文件夹跟这个差不多</p>
+<ol start="3">
+<li>安转主题</li>
+</ol>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">git clone https://github.com/olOwOlo/hugo-theme-even themes/even
+</code></pre></td></tr></table>
+</div>
+</div><p>这边用的例子是even主题,推荐的朋友挺多的</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">cp -rf themes/even/exampleSite/content .
+cp themes/even/exampleSite/config.toml .
+</code></pre></td></tr></table>
+</div>
+</div><p>这边可以直接偷懒,把例子拿来直接用</p>
+<ol start="4">
+<li>本地测试</li>
+</ol>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">hugo server
+</code></pre></td></tr></table>
+</div>
+</div><p>然后就能在http://localhost:1313/ 里面看到效果了</p>
+<ol start="5">
+<li>部署</li>
+</ol>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="cp">#!/bin/bash
+</span><span class="cp"></span><span class="c1"># 部署到 github pages 脚本</span>
+<span class="c1"># 错误时终止脚本</span>
+<span class="nb">set</span> -e
+
+<span class="c1"># 删除打包文件夹</span>
+rm -rf public
+
+<span class="c1"># 打包。even 是主题</span>
+hugo -t even <span class="c1"># if using a theme, replace with `hugo -t &lt;YOURTHEME&gt;`</span>
+
+<span class="c1"># 进入打包文件夹</span>
+<span class="nb">cd</span> public
+
+<span class="c1"># Add changes to git.</span>
+
+git init
+git add -A
+
+<span class="c1"># Commit changes.</span>
+<span class="nv">msg</span><span class="o">=</span><span class="s2">&#34;building site `date`&#34;</span>
+<span class="k">if</span> <span class="o">[</span> <span class="nv">$#</span> -eq <span class="m">1</span> <span class="o">]</span>
+  <span class="k">then</span> <span class="nv">msg</span><span class="o">=</span><span class="s2">&#34;</span><span class="nv">$1</span><span class="s2">&#34;</span>
+<span class="k">fi</span>
+git commit -m <span class="s2">&#34;</span><span class="nv">$msg</span><span class="s2">&#34;</span>
+
+<span class="c1"># 推送到githu</span>  
+<span class="c1"># nusr.github.io 只能使用 master分支</span>
+git push -f https://github.com/eltria/eltria.GitHub.io.git master
+
+<span class="c1"># 回到原文件夹</span>
+<span class="nb">cd</span> ..
+</code></pre></td></tr></table>
+</div>
+</div><p>根据网上的一个朋友的脚本改的,核心的点是hugo -t even打包之后,每次都是git 强行覆盖master</p>
+<h1 id="效果图">效果图</h1>
+<p><img src="https://tva1.sinaimg.cn/large/007S8ZIlly1gfkvur6043j31940u015n.jpg" alt="">
+看起来挺满意的</p>
+<p><img src="https://tva1.sinaimg.cn/large/007S8ZIlly1gfkvvigh5aj30vm0dqdho.jpg" alt="">
+性能也很好,爱了!</p>
+</p>
+          <p>17 Jul 2020
+            
+          </p>
+          
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col s3 m1">
+      
+        <a class="btn-floating btn-large waves-effect waves-light" href="https://eltria.github.io/post/first/"><i class="mdi-navigation-arrow-back"></i></a>
+      
+      </div>
+      <div class="col s6 m10 center">&nbsp</div>
+      <div class="col s3 m1">
+      
+        <a class="btn-floating btn-large disabled"><i class="mdi-navigation-arrow-forward"></i></a>
+      
+      </div>
+    </div>
+
+  </div>
+</div>
+
+  <footer class="page-footer">
+    <div class="footer-copyright">
+      <div class="container">
+      
+      <div class="right">Design <a class="grey-text text-lighten-4" href="http://pdevty.github.io/blog/">pdevty</a></div>
+      </div>
+    </div>
+  </footer>
+  <script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+  <script src="https://eltria.github.io/js/materialize.min.js"></script>
+  <script src="https://eltria.github.io/js/init.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.6/highlight.min.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script>
+  
+
+  </body>
+</html>
+
