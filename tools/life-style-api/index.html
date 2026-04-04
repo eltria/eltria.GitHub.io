@@ -490,7 +490,7 @@ function initTabs(sel,cb){
     btn.addEventListener('click',()=>{
       document.querySelectorAll(sel).forEach(b=>b.classList.remove('active'));
       btn.classList.add('active');
-      cb(btn.dataset.tf||btn.dataset.kt||btn.dataset.bt||btn.dataset.ft);
+      cb(btn.dataset.tf||btn.dataset.kt||btn.dataset.bt||btn.dataset.ft||btn.dataset.nt);
     });
   });
 }
