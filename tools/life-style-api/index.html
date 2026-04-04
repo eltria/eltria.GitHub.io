@@ -3,542 +3,1133 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Life-Style API — Eltria</title>
-  <meta name="description" content="Life-Style API client for testing and calling endpoints.">
+  <title>Life-Style — Eltria</title>
   <script src="/assets/js/theme.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script>tailwind.config = { darkMode: 'class' }</script>
+  <script>tailwind.config={darkMode:'class'}</script>
   <link rel="stylesheet" href="/assets/css/global.css">
   <style>
-    .method-get { color: #22c55e; }
-    .method-post { color: #3b82f6; }
-    .method-put { color: #f59e0b; }
-    .method-delete { color: #ef4444; }
-    .method-patch { color: #a855f7; }
-    .method-badge { font-size: 10px; font-weight: 700; padding: 1px 5px; border-radius: 4px; font-family: monospace; }
-    .method-badge.get { background: #22c55e20; color: #22c55e; }
-    .method-badge.post { background: #3b82f620; color: #3b82f6; }
-    .method-badge.put { background: #f59e0b20; color: #f59e0b; }
-    .method-badge.delete { background: #ef444420; color: #ef4444; }
-    .method-badge.patch { background: #a855f720; color: #a855f7; }
-    .endpoint-item { cursor: pointer; transition: background 0.15s; }
-    .endpoint-item:hover { background: rgba(59,130,246,0.06); }
-    .endpoint-item.active { background: rgba(59,130,246,0.1); border-right: 2px solid #3b82f6; }
-    .sidebar::-webkit-scrollbar { width: 4px; }
-    .sidebar::-webkit-scrollbar-thumb { background: rgba(127,127,127,0.3); border-radius: 2px; }
-    .json-key { color: #3b82f6; }
-    .json-string { color: #22c55e; }
-    .json-number { color: #f59e0b; }
-    .json-boolean { color: #a855f7; }
-    .json-null { color: #6b7280; }
-    .dark .json-key { color: #60a5fa; }
-    .dark .json-string { color: #4ade80; }
-    .dark .json-number { color: #fbbf24; }
-    .dark .json-boolean { color: #c084fc; }
+    :root{--sidebar-w:64px}
+    .sidebar-icon{width:40px;height:40px;display:flex;align-items:center;justify-content:center;border-radius:12px;font-size:18px;cursor:pointer;transition:all .15s}
+    .sidebar-icon:hover{background:rgba(59,130,246,.12)}
+    .sidebar-icon.active{background:rgba(59,130,246,.18);box-shadow:inset 3px 0 0 #3b82f6}
+    .card{background:var(--card-bg);border:1px solid var(--card-border);border-radius:16px;padding:20px;transition:box-shadow .2s}
+    .card:hover{box-shadow:0 2px 12px rgba(0,0,0,.06)}
+    html{--card-bg:#fff;--card-border:#e5e7eb}
+    html.dark{--card-bg:#111827;--card-border:#1f2937}
+    .pri-0{border-left:3px solid #94a3b8}.pri-1{border-left:3px solid #3b82f6}.pri-2{border-left:3px solid #f59e0b}.pri-3{border-left:3px solid #ef4444}
+    .badge{font-size:10px;padding:2px 8px;border-radius:9999px;font-weight:600}
+    .badge-get{background:#dcfce7;color:#16a34a}.badge-post{background:#dbeafe;color:#2563eb}
+    .toast{position:fixed;bottom:24px;right:24px;z-index:9999;padding:12px 20px;border-radius:12px;font-size:13px;font-weight:500;animation:slideUp .3s;max-width:360px}
+    .toast-ok{background:#dcfce7;color:#15803d;border:1px solid #bbf7d0}
+    .toast-err{background:#fee2e2;color:#b91c1c;border:1px solid #fecaca}
+    @keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+    .spinner{width:20px;height:20px;border:2px solid rgba(59,130,246,.2);border-top-color:#3b82f6;border-radius:50%;animation:spin .6s linear infinite;display:inline-block}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .chat-bubble{max-width:80%;padding:10px 14px;border-radius:16px;font-size:13px;line-height:1.6;white-space:pre-wrap}
+    .chat-user{background:#3b82f6;color:#fff;border-bottom-right-radius:4px;margin-left:auto}
+    .chat-bot{background:#f3f4f6;color:#1f2937;border-bottom-left-radius:4px}
+    .dark .chat-bot{background:#1f2937;color:#e5e7eb}
+    .tab-btn{padding:6px 16px;font-size:12px;font-weight:600;border-radius:8px;cursor:pointer;transition:all .15s}
+    .tab-btn.active{background:#3b82f6;color:#fff}
+    .tab-btn:not(.active){color:#6b7280}
+    .tab-btn:not(.active):hover{background:rgba(59,130,246,.08)}
+    .input{width:100%;padding:8px 12px;font-size:13px;border-radius:10px;border:1px solid #e5e7eb;background:#f9fafb;outline:none;transition:border-color .15s}
+    .input:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.1)}
+    .dark .input{background:#0f172a;border-color:#1e293b;color:#e2e8f0}
+    .btn{padding:8px 16px;font-size:13px;font-weight:600;border-radius:10px;cursor:pointer;transition:all .15s;border:none}
+    .btn-primary{background:#3b82f6;color:#fff}.btn-primary:hover{background:#2563eb}
+    .btn-danger{background:#ef4444;color:#fff}.btn-danger:hover{background:#dc2626}
+    .btn-ghost{background:transparent;color:#6b7280;border:1px solid #e5e7eb}
+    .btn-ghost:hover{background:#f3f4f6}.dark .btn-ghost{border-color:#374151}.dark .btn-ghost:hover{background:#1f2937}
+    .btn:disabled{opacity:.5;cursor:not-allowed}
+    .empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;color:#9ca3af;font-size:14px}
+    .weather-card{text-align:center;min-width:100px}
+    .modal-overlay{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center}
+    .modal{background:var(--card-bg);border:1px solid var(--card-border);border-radius:20px;padding:24px;width:100%;max-width:480px;max-height:80vh;overflow-y:auto}
+    .view{display:none}.view.active{display:block}
+    .section-title{font-size:14px;font-weight:700;color:#374151;margin-bottom:12px}
+    .dark .section-title{color:#d1d5db}
+    #main-app{height:calc(100vh - 48px)}
+    .content-area{flex:1;overflow-y:auto;padding:24px}
+    .stat-card{text-align:center}.stat-card .stat-num{font-size:28px;font-weight:800;color:#3b82f6}
+    .stat-card .stat-label{font-size:11px;color:#9ca3af;margin-top:2px}
   </style>
 </head>
-<body class="bg-white dark:bg-gray-950 text-gray-800 dark:text-gray-200 antialiased">
+<body class="bg-gray-50 dark:bg-gray-950 text-gray-800 dark:text-gray-200 antialiased overflow-hidden">
+<script type="module">import{initNav}from'/assets/js/nav.js';initNav();</script>
 
-  <script type="module">
-    import { initNav } from '/assets/js/nav.js';
-    initNav();
-  </script>
-
-  <!-- Password Gate -->
-  <div id="auth-gate" class="min-h-screen flex items-center justify-center">
-    <div class="w-full max-w-sm px-6">
-      <h1 class="text-xl font-bold text-center mb-6">Life-Style API</h1>
-      <p class="text-sm text-gray-400 text-center mb-6">Enter password to access</p>
-      <div class="flex gap-2">
-        <input id="auth-password" type="password" class="flex-1 px-4 py-2.5 text-sm bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500" placeholder="Password" autofocus>
-        <button id="auth-submit" class="px-5 py-2.5 text-sm font-medium bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors">Enter</button>
-      </div>
-      <p id="auth-error" class="text-xs text-red-500 mt-2 hidden">Incorrect password</p>
+<!-- ═══ Password Gate ═══ -->
+<div id="auth-gate" class="min-h-screen flex items-center justify-center">
+  <div class="w-full max-w-xs px-6 text-center">
+    <div class="text-3xl mb-2">🏠</div>
+    <h1 class="text-lg font-bold mb-1">Life-Style</h1>
+    <p class="text-xs text-gray-400 mb-6">Enter password to continue</p>
+    <div class="flex gap-2">
+      <input id="auth-pw" type="password" class="input flex-1" placeholder="Password" autofocus>
+      <button onclick="tryAuth()" class="btn btn-primary">Enter</button>
     </div>
+    <p id="auth-err" class="text-xs text-red-500 mt-2 hidden">Incorrect password</p>
+  </div>
+</div>
+
+<!-- ═══ Main App ═══ -->
+<div id="main-app" class="hidden flex">
+  <!-- Sidebar -->
+  <div class="shrink-0 flex flex-col items-center py-3 gap-1 border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900" style="width:var(--sidebar-w)">
+    <div class="sidebar-icon active" data-view="dashboard" title="Dashboard">📊</div>
+    <div class="sidebar-icon" data-view="todo" title="Todo">✅</div>
+    <div class="sidebar-icon" data-view="knowledge" title="Knowledge">📚</div>
+    <div class="sidebar-icon" data-view="layeros" title="LayerOS">🌤</div>
+    <div class="sidebar-icon" data-view="wardrobe" title="Wardrobe">👔</div>
+    <div class="sidebar-icon" data-view="billsplit" title="BillSplit">💰</div>
+    <div class="sidebar-icon" data-view="foodmap" title="FoodMap">🍜</div>
+    <div class="mt-auto"></div>
+    <div class="sidebar-icon" data-view="settings" title="Settings">⚙️</div>
   </div>
 
-  <!-- Main App (hidden until authenticated) -->
-  <div id="main-app" class="hidden">
-    <div class="flex" style="height: calc(100vh - 48px);">
-      <!-- Sidebar -->
-      <div class="sidebar w-72 shrink-0 border-r border-gray-200 dark:border-gray-800 flex flex-col overflow-hidden">
-        <!-- Settings -->
-        <div class="p-3 border-b border-gray-200 dark:border-gray-800">
-          <div class="text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wider">Settings</div>
-          <div class="space-y-2">
-            <div>
-              <label class="text-[10px] text-gray-400 block mb-0.5">Base URL</label>
-              <select id="base-url-select" class="w-full px-2 py-1.5 text-xs bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg focus:outline-none">
-                <option value="https://life-style-wgsx.onrender.com/api/v1">Production</option>
-                <option value="http://localhost:8080/api/v1">Local</option>
-              </select>
-            </div>
-            <div>
-              <label class="text-[10px] text-gray-400 block mb-0.5">Bearer Token</label>
-              <input id="bearer-token" type="password" class="w-full px-2 py-1.5 text-xs bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg focus:outline-none" placeholder="ls_...">
-            </div>
-          </div>
-        </div>
-        <!-- Endpoints list -->
-        <div class="flex-1 overflow-auto py-1" id="endpoints-list"></div>
-      </div>
-
-      <!-- Main content -->
-      <div class="flex-1 min-w-0 flex flex-col overflow-auto">
-        <!-- Empty state -->
-        <div id="empty-state" class="flex-1 flex items-center justify-center">
-          <div class="text-center">
-            <p class="text-gray-400 text-sm">Select an endpoint from the sidebar</p>
-          </div>
-        </div>
-
-        <!-- Endpoint detail -->
-        <div id="endpoint-detail" class="hidden flex-1 flex flex-col overflow-auto">
-          <div class="p-6 space-y-4">
-            <!-- Endpoint header -->
-            <div>
-              <div class="flex items-center gap-2 mb-1">
-                <span id="detail-method" class="method-badge"></span>
-                <code id="detail-path" class="text-sm font-mono text-gray-700 dark:text-gray-300"></code>
-              </div>
-              <p id="detail-desc" class="text-xs text-gray-400"></p>
-            </div>
-
-            <!-- Path params -->
-            <div id="path-params-section" class="hidden">
-              <label class="text-xs font-semibold text-gray-500 block mb-2">Path Parameters</label>
-              <div id="path-params" class="space-y-2"></div>
-            </div>
-
-            <!-- Query params -->
-            <div id="query-params-section" class="hidden">
-              <label class="text-xs font-semibold text-gray-500 block mb-2">Query Parameters</label>
-              <div id="query-params" class="space-y-2"></div>
-            </div>
-
-            <!-- Body -->
-            <div id="body-section" class="hidden">
-              <label class="text-xs font-semibold text-gray-500 block mb-2">Request Body</label>
-              <textarea id="body-editor" class="w-full p-3 text-xs font-mono bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/30 resize-y" rows="10" spellcheck="false"></textarea>
-            </div>
-
-            <!-- Send button -->
-            <div class="flex items-center gap-3">
-              <button id="send-btn" class="px-5 py-2 text-sm font-medium bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                Send Request
-              </button>
-              <span id="response-time" class="text-xs text-gray-400 hidden"></span>
-            </div>
-
-            <!-- Response -->
-            <div id="response-section" class="hidden">
-              <div class="flex items-center gap-2 mb-2">
-                <label class="text-xs font-semibold text-gray-500">Response</label>
-                <span id="response-status" class="text-xs font-mono px-2 py-0.5 rounded"></span>
-              </div>
-              <pre id="response-body" class="w-full p-4 text-xs font-mono bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl overflow-auto max-h-[60vh] leading-relaxed"></pre>
-            </div>
-          </div>
-        </div>
+  <!-- Content -->
+  <div class="flex-1 flex flex-col min-w-0">
+    <!-- Top bar -->
+    <div class="shrink-0 flex items-center justify-between px-6 py-2 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
+      <h2 id="view-title" class="text-sm font-bold">Dashboard</h2>
+      <div class="flex items-center gap-3">
+        <select id="cfg-url" class="text-xs bg-gray-100 dark:bg-gray-800 border-0 rounded-lg px-2 py-1 cursor-pointer">
+          <option value="https://life-style-wgsx.onrender.com/api/v1">Production</option>
+          <option value="http://localhost:8080/api/v1">Local</option>
+        </select>
+        <input id="cfg-token" type="password" class="text-xs bg-gray-100 dark:bg-gray-800 border-0 rounded-lg px-2 py-1 w-32" placeholder="Bearer Token">
       </div>
     </div>
-  </div>
 
-  <script>
-    // ─── Password Gate ───
-    const PASS_HASH = '4c10cf42edcc563079f07288eafa6395f357cf07620067b8f43ef325a2b282b8';
+    <!-- Views -->
+    <div class="content-area">
 
-    async function sha256(text) {
-      const data = new TextEncoder().encode(text);
-      const hash = await crypto.subtle.digest('SHA-256', data);
-      return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
-    }
+      <!-- ═══ Dashboard ═══ -->
+      <div id="v-dashboard" class="view active">
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6" id="dash-stats"></div>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div class="card" id="dash-weather"><div class="section-title">🌤 今日天气</div><div class="text-xs text-gray-400">Loading...</div></div>
+          <div class="card" id="dash-outfit"><div class="section-title">👔 穿搭建议</div><div class="text-xs text-gray-400">Loading...</div></div>
+          <div class="card" id="dash-todos"><div class="section-title">✅ 今日待办</div><div class="text-xs text-gray-400">Loading...</div></div>
+          <div class="card" id="dash-llm"><div class="section-title">🤖 LLM 状态</div><div class="text-xs text-gray-400">Loading...</div></div>
+        </div>
+      </div>
 
-    async function checkAuth() {
-      if (sessionStorage.getItem('ls-api-auth') === 'ok') {
-        showApp();
-        return;
-      }
-      document.getElementById('auth-gate').classList.remove('hidden');
-    }
+      <!-- ═══ Todo ═══ -->
+      <div id="v-todo" class="view">
+        <!-- NLP bar -->
+        <div class="card mb-4 flex gap-2 items-center">
+          <span class="text-lg">🗣</span>
+          <input id="todo-nlp" class="input flex-1" placeholder="自然语言创建待办: 明天下午三点提醒我去开会">
+          <button onclick="todoNlpCreate()" class="btn btn-primary text-xs">智能创建</button>
+          <button onclick="showTodoModal()" class="btn btn-ghost text-xs">+ 新建</button>
+        </div>
+        <!-- Filters -->
+        <div class="flex gap-2 mb-4 flex-wrap">
+          <button class="tab-btn active" data-tf="all">全部</button>
+          <button class="tab-btn" data-tf="today">今日</button>
+          <button class="tab-btn" data-tf="upcoming">即将到期</button>
+          <button class="tab-btn" data-tf="pending">待处理</button>
+          <button class="tab-btn" data-tf="completed">已完成</button>
+          <input id="todo-search" class="input ml-auto" style="width:200px" placeholder="搜索..." oninput="todoSearch()">
+        </div>
+        <!-- List -->
+        <div id="todo-list"></div>
+        <!-- Categories -->
+        <div class="mt-6">
+          <div class="flex items-center justify-between mb-3">
+            <div class="section-title mb-0">分类管理</div>
+            <button onclick="showCatModal()" class="btn btn-ghost text-xs">+ 新分类</button>
+          </div>
+          <div id="cat-list" class="flex flex-wrap gap-2"></div>
+        </div>
+      </div>
 
-    async function tryAuth() {
-      const pw = document.getElementById('auth-password').value;
-      const hash = await sha256(pw);
-      if (hash === PASS_HASH) {
-        sessionStorage.setItem('ls-api-auth', 'ok');
-        showApp();
-      } else {
-        document.getElementById('auth-error').classList.remove('hidden');
-        document.getElementById('auth-password').value = '';
-        document.getElementById('auth-password').focus();
-      }
-    }
+      <!-- ═══ Knowledge ═══ -->
+      <div id="v-knowledge" class="view">
+        <div class="flex gap-2 mb-4">
+          <button class="tab-btn active" data-kt="base">知识库</button>
+          <button class="tab-btn" data-kt="chat">对话</button>
+        </div>
+        <!-- Knowledge Base -->
+        <div id="k-base">
+          <div class="flex gap-2 mb-4">
+            <input id="k-search" class="input flex-1" placeholder="搜索知识..." oninput="kSearch()">
+            <button onclick="showKModal()" class="btn btn-primary text-xs">+ 新知识</button>
+          </div>
+          <div id="k-stats" class="flex gap-4 mb-4 text-xs text-gray-400"></div>
+          <div id="k-list"></div>
+        </div>
+        <!-- Chat -->
+        <div id="k-chat" class="hidden">
+          <div class="flex gap-4" style="height:calc(100vh - 220px)">
+            <div class="w-48 shrink-0 space-y-2 overflow-y-auto">
+              <button onclick="chatNewSession()" class="btn btn-primary w-full text-xs mb-2">+ 新对话</button>
+              <div id="chat-sessions"></div>
+            </div>
+            <div class="flex-1 flex flex-col card p-0 overflow-hidden">
+              <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-3"></div>
+              <div class="p-3 border-t border-gray-200 dark:border-gray-700 flex gap-2">
+                <input id="chat-input" class="input flex-1" placeholder="输入问题或知识..." onkeydown="if(event.key==='Enter')chatSend()">
+                <button onclick="chatSend()" class="btn btn-primary text-xs">发送</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
-    function showApp() {
-      document.getElementById('auth-gate').classList.add('hidden');
-      document.getElementById('main-app').classList.remove('hidden');
-      initApp();
-    }
+      <!-- ═══ LayerOS ═══ -->
+      <div id="v-layeros" class="view">
+        <!-- Weather -->
+        <div class="flex items-center justify-between mb-3">
+          <div class="section-title mb-0">天气预报</div>
+          <div class="flex items-center gap-2">
+            <span id="weather-cache-time" class="text-xs text-gray-400"></span>
+            <button onclick="weatherRefresh()" class="btn btn-ghost text-xs">刷新</button>
+          </div>
+        </div>
+        <div id="weather-cards" class="flex gap-3 overflow-x-auto pb-2 mb-6"></div>
+        <!-- Outfit -->
+        <div class="section-title">穿搭推荐</div>
+        <div id="outfit-cards" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6"></div>
+        <!-- Gears -->
+        <div class="flex items-center justify-between mb-3">
+          <div class="section-title mb-0">服装管理</div>
+          <div class="flex gap-2">
+            <button onclick="showGearNlp()" class="btn btn-ghost text-xs">🗣 语言添加</button>
+            <button onclick="showGearModal()" class="btn btn-primary text-xs">+ 添加</button>
+          </div>
+        </div>
+        <div id="gear-list"></div>
+      </div>
 
-    document.getElementById('auth-submit').addEventListener('click', tryAuth);
-    document.getElementById('auth-password').addEventListener('keydown', e => {
-      if (e.key === 'Enter') tryAuth();
+      <!-- ═══ Wardrobe ═══ -->
+      <div id="v-wardrobe" class="view">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center gap-3">
+            <div class="section-title mb-0">衣柜管理</div>
+            <select id="wd-floorplan" class="text-xs bg-gray-100 dark:bg-gray-800 border-0 rounded-lg px-2 py-1" onchange="wdLoadFloorplan()"></select>
+          </div>
+          <div class="flex gap-2">
+            <button onclick="showWdSearch()" class="btn btn-ghost text-xs">🔍 搜索衣物</button>
+            <button onclick="showWdNewWardrobe()" class="btn btn-primary text-xs">+ 新衣柜</button>
+          </div>
+        </div>
+        <div id="wd-stats" class="flex gap-4 mb-4"></div>
+        <div id="wd-wardrobes" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+        <div id="wd-clothing" class="mt-4 hidden">
+          <div class="flex items-center justify-between mb-3">
+            <div class="section-title mb-0" id="wd-clothing-title"></div>
+            <button onclick="document.getElementById('wd-clothing').classList.add('hidden')" class="btn btn-ghost text-xs">← 返回</button>
+          </div>
+          <div id="wd-clothing-list"></div>
+        </div>
+      </div>
+
+      <!-- ═══ BillSplit ═══ -->
+      <div id="v-billsplit" class="view">
+        <div class="flex gap-2 mb-4">
+          <button class="tab-btn active" data-bt="quick">快捷分账</button>
+          <button class="tab-btn" data-bt="groups">群组账单</button>
+        </div>
+        <!-- Quick split -->
+        <div id="bs-quick">
+          <div class="card mb-4">
+            <div class="section-title">🗣 自然语言分账</div>
+            <textarea id="bs-input" class="input" rows="3" placeholder="昨天火锅1200 土豆3大1小 新鲜2大 康康2大2小"></textarea>
+            <button onclick="bsQuickSplit()" class="btn btn-primary mt-3 text-xs">计算分账</button>
+          </div>
+          <div id="bs-result"></div>
+        </div>
+        <!-- Groups -->
+        <div id="bs-groups" class="hidden">
+          <div class="flex gap-2 mb-4">
+            <button onclick="showBsGroupModal()" class="btn btn-primary text-xs">+ 新群组</button>
+          </div>
+          <div id="bs-group-list"></div>
+          <div id="bs-group-detail" class="hidden mt-4"></div>
+        </div>
+      </div>
+
+      <!-- ═══ FoodMap ═══ -->
+      <div id="v-foodmap" class="view">
+        <div class="flex gap-2 mb-4">
+          <button class="tab-btn active" data-ft="malls">商场</button>
+          <button class="tab-btn" data-ft="favorites">收藏</button>
+          <button class="tab-btn" data-ft="sync">同步</button>
+          <div class="ml-auto flex gap-2">
+            <select id="fm-district" class="text-xs bg-gray-100 dark:bg-gray-800 border-0 rounded-lg px-2 py-1" onchange="fmLoad()"><option value="">全部区域</option></select>
+            <input id="fm-search" class="input" style="width:160px" placeholder="搜索商场...">
+          </div>
+        </div>
+        <div id="fm-stats" class="flex gap-4 mb-4 text-xs text-gray-400"></div>
+        <div id="fm-malls" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+        <div id="fm-favorites" class="hidden"></div>
+        <div id="fm-sync" class="hidden"></div>
+        <div id="fm-restaurant-panel" class="hidden mt-4"></div>
+      </div>
+
+      <!-- ═══ Settings ═══ -->
+      <div id="v-settings" class="view">
+        <div class="max-w-xl space-y-6">
+          <div class="card">
+            <div class="section-title">应用配置</div>
+            <div class="space-y-3" id="cfg-app"></div>
+          </div>
+          <div class="card">
+            <div class="section-title">Claude API</div>
+            <div class="space-y-3" id="cfg-claude"></div>
+          </div>
+          <div class="card">
+            <div class="section-title">Embedding</div>
+            <div class="space-y-3" id="cfg-embedding"></div>
+          </div>
+          <div class="card">
+            <div class="section-title">🤖 LLM 状态</div>
+            <div id="cfg-llm"></div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /content-area -->
+  </div><!-- /flex-1 -->
+</div><!-- /main-app -->
+
+<!-- ═══ Modal container ═══ -->
+<div id="modal" class="modal-overlay hidden" onclick="if(event.target===this)closeModal()">
+  <div class="modal" id="modal-body"></div>
+</div>
+
+<!-- ═══ Toast container ═══ -->
+<div id="toast-container"></div>
+
+<script>
+// ══════════════════════════════════════
+//  Auth
+// ══════════════════════════════════════
+const HASH='4c10cf42edcc563079f07288eafa6395f357cf07620067b8f43ef325a2b282b8';
+async function sha256(t){const d=new TextEncoder().encode(t);const h=await crypto.subtle.digest('SHA-256',d);return Array.from(new Uint8Array(h)).map(b=>b.toString(16).padStart(2,'0')).join('')}
+window.tryAuth=async function(){
+  const pw=document.getElementById('auth-pw').value;
+  if(await sha256(pw)===HASH){sessionStorage.setItem('ls-auth','ok');boot()}
+  else{document.getElementById('auth-err').classList.remove('hidden');document.getElementById('auth-pw').value='';document.getElementById('auth-pw').focus()}
+};
+document.getElementById('auth-pw').addEventListener('keydown',e=>{if(e.key==='Enter')tryAuth()});
+if(sessionStorage.getItem('ls-auth')==='ok')boot();
+
+// ══════════════════════════════════════
+//  API Client
+// ══════════════════════════════════════
+function apiUrl(){return document.getElementById('cfg-url').value}
+function apiToken(){return document.getElementById('cfg-token').value}
+async function api(method,path,body){
+  const h={'Authorization':`Bearer ${apiToken()}`};
+  const opts={method,headers:h};
+  if(body!==undefined){h['Content-Type']='application/json';opts.body=JSON.stringify(body)}
+  const r=await fetch(`${apiUrl()}${path}`,opts);
+  const j=await r.json().catch(()=>null);
+  if(!r.ok)throw new Error(j?.message||`HTTP ${r.status}`);
+  return j?.data;
+}
+const GET=(p)=>api('GET',p);
+const POST=(p,b)=>api('POST',p,b);
+const PUT=(p,b)=>api('PUT',p,b);
+const DEL=(p)=>api('DELETE',p);
+const PATCH=(p,b)=>api('PATCH',p,b);
+
+// ══════════════════════════════════════
+//  Utilities
+// ══════════════════════════════════════
+function toast(msg,ok=true){
+  const el=document.createElement('div');
+  el.className=`toast ${ok?'toast-ok':'toast-err'}`;
+  el.textContent=msg;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(()=>el.remove(),3000);
+}
+function showModal(html){document.getElementById('modal-body').innerHTML=html;document.getElementById('modal').classList.remove('hidden')}
+function closeModal(){document.getElementById('modal').classList.add('hidden')}
+function fmtDate(d){if(!d)return'';return new Date(d).toLocaleDateString('zh-CN',{month:'short',day:'numeric'})}
+function fmtDateTime(d){if(!d)return'';return new Date(d).toLocaleString('zh-CN',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}
+const PRI_LABELS=['低','中','高','紧急'];
+const PRI_COLORS=['#94a3b8','#3b82f6','#f59e0b','#ef4444'];
+const STATUS_LABELS=['待处理','进行中','已完成','已归档'];
+function loading(id){document.getElementById(id).innerHTML='<div class="flex justify-center py-8"><div class="spinner"></div></div>'}
+function empty(id,msg='暂无数据'){document.getElementById(id).innerHTML=`<div class="empty-state">${msg}</div>`}
+
+// ══════════════════════════════════════
+//  Router
+// ══════════════════════════════════════
+const VIEWS={dashboard:'Dashboard',todo:'Todo',knowledge:'Knowledge',layeros:'LayerOS',wardrobe:'Wardrobe',billsplit:'BillSplit',foodmap:'FoodMap',settings:'Settings'};
+let currentView='dashboard';
+
+function navigate(v){
+  currentView=v;
+  document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
+  document.getElementById(`v-${v}`).classList.add('active');
+  document.querySelectorAll('.sidebar-icon').forEach(el=>{el.classList.toggle('active',el.dataset.view===v)});
+  document.getElementById('view-title').textContent=VIEWS[v];
+  // init view
+  const inits={dashboard:initDashboard,todo:initTodo,knowledge:initKnowledge,layeros:initLayerOS,wardrobe:initWardrobe,billsplit:initBillSplit,foodmap:initFoodMap,settings:initSettings};
+  inits[v]?.();
+}
+
+document.querySelectorAll('.sidebar-icon').forEach(el=>{
+  el.addEventListener('click',()=>navigate(el.dataset.view));
+});
+
+// Tab helpers
+function initTabs(sel,cb){
+  document.querySelectorAll(sel).forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      document.querySelectorAll(sel).forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      cb(btn.dataset.tf||btn.dataset.kt||btn.dataset.bt||btn.dataset.ft);
     });
+  });
+}
 
-    // ─── API Endpoints Registry ───
-    const ENDPOINTS = [
-      // Todo
-      { module: 'Todo', name: '列出待办', method: 'GET', path: '/todos', desc: '获取所有待办事项' },
-      { module: 'Todo', name: '创建待办', method: 'POST', path: '/todos', desc: '创建新待办事项', body: { title: '买菜', description: '去超市买西红柿和鸡蛋', priority: 1, dueDate: '2026-03-10T18:00:00Z', categoryId: null, tags: ['日常'] } },
-      { module: 'Todo', name: '今日待办', method: 'GET', path: '/todos/today', desc: '返回今日截止的待办' },
-      { module: 'Todo', name: '即将到期', method: 'GET', path: '/todos/upcoming', desc: '7天内到期且pending的待办' },
-      { module: 'Todo', name: '已完成', method: 'GET', path: '/todos/completed', desc: '已完成的待办列表' },
-      { module: 'Todo', name: '待处理', method: 'GET', path: '/todos/pending', desc: '状态为pending的待办' },
-      { module: 'Todo', name: '搜索待办', method: 'GET', path: '/todos/search', desc: '搜索待办', query: [{ name: 'q', desc: '搜索关键词', required: true }] },
-      { module: 'Todo', name: '更新待办', method: 'PUT', path: '/todos/:id', desc: '更新待办信息', body: { title: '', description: '', priority: 1, status: 0 } },
-      { module: 'Todo', name: '删除待办', method: 'DELETE', path: '/todos/:id', desc: '删除待办' },
-      { module: 'Todo', name: '完成待办', method: 'POST', path: '/todos/:id/complete', desc: '标记待办为已完成' },
+// ══════════════════════════════════════
+//  Dashboard
+// ══════════════════════════════════════
+async function initDashboard(){
+  const el=document.getElementById('dash-stats');
+  el.innerHTML='<div class="col-span-4 flex justify-center py-4"><div class="spinner"></div></div>';
+  try{
+    const [todos,kStats,wdStats,fmStats]=await Promise.allSettled([
+      GET('/todos/pending'),GET('/knowledge/stats'),GET('/wardrobe/stats'),GET('/foodmap/stats')
+    ]);
+    const pending=todos.status==='fulfilled'?(todos.value?.length??0):'—';
+    const kTotal=kStats.status==='fulfilled'?(kStats.value?.total??0):'—';
+    const wdCount=wdStats.status==='fulfilled'?(wdStats.value?.clothingCount??0):'—';
+    const fmCount=fmStats.status==='fulfilled'?(fmStats.value?.mallCount??0):'—';
+    el.innerHTML=[
+      {n:pending,l:'待处理待办'},{n:kTotal,l:'知识条目'},{n:wdCount,l:'衣物数量'},{n:fmCount,l:'商场数量'}
+    ].map(s=>`<div class="card stat-card"><div class="stat-num">${s.n}</div><div class="stat-label">${s.l}</div></div>`).join('');
+  }catch{el.innerHTML='<div class="text-xs text-gray-400">无法加载统计</div>'}
 
-      // Category
-      { module: 'Category', name: '列出分类', method: 'GET', path: '/categories', desc: '获取所有分类' },
-      { module: 'Category', name: '创建分类', method: 'POST', path: '/categories', desc: '创建新分类', body: { name: '健身', color: '#ef4444', icon: '💪' } },
-      { module: 'Category', name: '更新分类', method: 'PUT', path: '/categories/:id', desc: '更新分类', body: { name: '', color: '', icon: '' } },
-      { module: 'Category', name: '删除分类', method: 'DELETE', path: '/categories/:id', desc: '删除分类' },
-      { module: 'Category', name: '分类下的待办', method: 'GET', path: '/categories/:id/todos', desc: '获取分类下的待办列表' },
+  // Weather
+  try{
+    const w=await GET('/layeros/weather/cache');
+    const today=w?.[0];
+    document.getElementById('dash-weather').innerHTML=today?`<div class="section-title">🌤 今日天气</div><div class="flex items-center gap-4"><div class="text-3xl font-bold">${today.tempMin}° ~ ${today.tempMax}°</div><div class="text-xs text-gray-400"><div>${today.condition}</div><div>湿度 ${today.humidity}% · 风速 ${today.windSpeed}m/s</div><div>体感 ${today.realFeelMin}° ~ ${today.realFeelMax}°</div></div></div>`:'<div class="section-title">🌤 天气</div><div class="text-xs text-gray-400">暂无缓存</div>';
+  }catch{}
 
-      // NLP
-      { module: 'NLP', name: '解析自然语言', method: 'POST', path: '/nlp/parse', desc: '将自然语言解析为结构化待办命令', body: { input: '明天下午三点提醒我去开会' } },
-      { module: 'NLP', name: '执行解析结果', method: 'POST', path: '/nlp/execute', desc: '执行/nlp/parse返回的解析结果', body: { action: 'create', title: '', priority: 1, dueDate: '' } },
+  // Outfit
+  try{
+    const o=await GET('/layeros/outfit/cache');
+    const today=o?.[0];
+    document.getElementById('dash-outfit').innerHTML=today?`<div class="section-title">👔 穿搭建议</div><div class="text-sm mb-2">${today.layers?.join(' → ')||''}</div><div class="text-xs text-gray-400">${today.explanation||''}</div>`:'<div class="section-title">👔 穿搭建议</div><div class="text-xs text-gray-400">暂无推荐</div>';
+  }catch{}
 
-      // Knowledge
-      { module: 'Knowledge', name: '列出知识条目', method: 'GET', path: '/knowledge', desc: '分页获取知识条目', query: [{ name: 'page', desc: '页码', required: false }, { name: 'pageSize', desc: '每页数量', required: false }] },
-      { module: 'Knowledge', name: '创建知识条目', method: 'POST', path: '/knowledge', desc: '创建知识条目，AI自动提取标题摘要', body: { content: '知识内容...', tags: ['标签'] } },
-      { module: 'Knowledge', name: '获取知识条目', method: 'GET', path: '/knowledge/:id', desc: '获取知识条目详情' },
-      { module: 'Knowledge', name: '更新知识条目', method: 'PUT', path: '/knowledge/:id', desc: '更新知识条目', body: { title: '', content: '', summary: '', tags: [] } },
-      { module: 'Knowledge', name: '删除知识条目', method: 'DELETE', path: '/knowledge/:id', desc: '删除知识条目及embedding' },
-      { module: 'Knowledge', name: '搜索知识', method: 'GET', path: '/knowledge/search', desc: '搜索知识条目', query: [{ name: 'q', desc: '搜索关键词', required: true }] },
-      { module: 'Knowledge', name: '获取统计', method: 'GET', path: '/knowledge/stats', desc: '知识库统计' },
-      { module: 'Knowledge', name: '标签列表', method: 'GET', path: '/knowledge/tags', desc: '所有标签列表' },
-      { module: 'Knowledge', name: '实体列表', method: 'GET', path: '/knowledge/entities', desc: '所有实体列表' },
-      { module: 'Knowledge', name: '知识图谱', method: 'GET', path: '/knowledge/graph', desc: '获取知识图谱' },
+  // Todos today
+  try{
+    const t=await GET('/todos/today');
+    const el2=document.getElementById('dash-todos');
+    el2.innerHTML=`<div class="section-title">✅ 今日待办</div>`+(t?.length?t.slice(0,5).map(i=>`<div class="flex items-center gap-2 py-1 text-sm"><span style="color:${PRI_COLORS[i.priority]}">●</span><span class="${i.status===2?'line-through text-gray-400':''}">${i.title}</span></div>`).join(''):'<div class="text-xs text-gray-400">今日无待办</div>');
+  }catch{}
 
-      // Chat
-      { module: 'Chat', name: '创建会话', method: 'POST', path: '/knowledge/chat/sessions', desc: '创建新对话会话' },
-      { module: 'Chat', name: '列出会话', method: 'GET', path: '/knowledge/chat/sessions', desc: '获取所有会话' },
-      { module: 'Chat', name: '会话详情', method: 'GET', path: '/knowledge/chat/sessions/:id', desc: '获取会话详情含消息' },
-      { module: 'Chat', name: '删除会话', method: 'DELETE', path: '/knowledge/chat/sessions/:id', desc: '删除会话' },
-      { module: 'Chat', name: '提问/添加知识', method: 'POST', path: '/knowledge/chat/sessions/:id/ask', desc: '提问或添加知识(id=0自动创建会话)', body: { question: 'Go 的 channel 有什么特点？' } },
+  // LLM
+  try{
+    const l=await GET('/llm/status');
+    document.getElementById('dash-llm').innerHTML=`<div class="section-title">🤖 LLM 状态</div><div class="text-sm"><div>主模型: <span class="font-semibold">${l.primary?.model||'未配置'}</span> ${l.primary?.configured?'<span class="text-green-500">●</span>':'<span class="text-red-500">●</span>'}</div><div class="text-xs text-gray-400 mt-1">Fallbacks: ${l.fallbacks?.length||0} · 熔断器: ${l.circuitBreaker?.state||'—'}</div></div>`;
+  }catch{}
+}
 
-      // LayerOS
-      { module: 'LayerOS', name: '列出服装', method: 'GET', path: '/layeros/gears', desc: '获取所有服装' },
-      { module: 'LayerOS', name: '添加服装', method: 'POST', path: '/layeros/gears', desc: '添加服装，AI自动估算CLO值', body: { name: '优衣库 AIRism T恤', brand: '优衣库', description: '轻薄透气的基础层T恤', layer: 'L1_Base' } },
-      { module: 'LayerOS', name: '自然语言添加', method: 'POST', path: '/layeros/gears/chat', desc: '通过自然语言描述添加服装', body: { input: '我有一件始祖鸟的 Beta LT 冲锋衣，GORE-TEX 面料，防风防水' } },
-      { module: 'LayerOS', name: '更新服装', method: 'PUT', path: '/layeros/gears/:id', desc: '更新服装信息', body: { name: '', brand: '', layer: '' } },
-      { module: 'LayerOS', name: '删除服装', method: 'DELETE', path: '/layeros/gears/:id', desc: '删除服装' },
-      { module: 'LayerOS', name: '清空服装', method: 'DELETE', path: '/layeros/gears', desc: '清空所有服装' },
-      { module: 'LayerOS', name: '天气预报', method: 'GET', path: '/layeros/weather', desc: '获取天气预报' },
-      { module: 'LayerOS', name: '详细天气', method: 'GET', path: '/layeros/weather/detailed', desc: '含多源数据和合并过程' },
-      { module: 'LayerOS', name: '缓存天气', method: 'GET', path: '/layeros/weather/cache', desc: '返回上次获取的天气数据' },
-      { module: 'LayerOS', name: '缓存时间', method: 'GET', path: '/layeros/weather/cache-time', desc: '获取天气缓存时间' },
-      { module: 'LayerOS', name: '刷新天气', method: 'POST', path: '/layeros/weather/refresh', desc: '强制重新获取天气数据' },
-      { module: 'LayerOS', name: '缓存穿搭', method: 'GET', path: '/layeros/outfit/cache', desc: '获取缓存穿搭推荐' },
-      { module: 'LayerOS', name: '穿搭推荐', method: 'GET', path: '/layeros/outfit/recommendation', desc: 'AI根据天气和服装生成穿搭建议' },
+// ══════════════════════════════════════
+//  Todo
+// ══════════════════════════════════════
+let todoFilter='all';
+initTabs('[data-tf]',f=>{todoFilter=f;loadTodos()});
 
-      // Wardrobe
-      { module: 'Wardrobe', name: '列出平面图', method: 'GET', path: '/wardrobe/floorplans', desc: '获取所有平面图' },
-      { module: 'Wardrobe', name: '创建平面图', method: 'POST', path: '/wardrobe/floorplans', desc: '创建平面图', body: { name: '卧室', description: '主卧衣柜布局', width: 800, height: 600 } },
-      { module: 'Wardrobe', name: '默认平面图', method: 'GET', path: '/wardrobe/floorplans/default', desc: '获取默认平面图含衣柜列表' },
-      { module: 'Wardrobe', name: '更新平面图', method: 'PUT', path: '/wardrobe/floorplans/:id', desc: '更新平面图', body: { name: '', description: '' } },
-      { module: 'Wardrobe', name: '删除平面图', method: 'DELETE', path: '/wardrobe/floorplans/:id', desc: '删除平面图及关联数据' },
-      { module: 'Wardrobe', name: '设为默认', method: 'POST', path: '/wardrobe/floorplans/:id/default', desc: '设为默认平面图' },
-      { module: 'Wardrobe', name: '创建衣柜', method: 'POST', path: '/wardrobe/wardrobes', desc: '创建衣柜', body: { floorPlanId: 1, name: '大衣柜', positionX: 100, positionY: 50, iconType: 'wardrobe', color: '#3b82f6' } },
-      { module: 'Wardrobe', name: '获取衣柜', method: 'GET', path: '/wardrobe/wardrobes/:id', desc: '获取衣柜含衣物列表' },
-      { module: 'Wardrobe', name: '更新衣柜', method: 'PUT', path: '/wardrobe/wardrobes/:id', desc: '更新衣柜信息', body: { name: '', color: '' } },
-      { module: 'Wardrobe', name: '更新位置', method: 'PATCH', path: '/wardrobe/wardrobes/:id/position', desc: '更新衣柜位置', body: { x: 200, y: 100 } },
-      { module: 'Wardrobe', name: '删除衣柜', method: 'DELETE', path: '/wardrobe/wardrobes/:id', desc: '删除衣柜及衣物' },
-      { module: 'Wardrobe', name: '获取衣物', method: 'GET', path: '/wardrobe/clothing/:id', desc: '获取衣物详情' },
-      { module: 'Wardrobe', name: '更新衣物', method: 'PUT', path: '/wardrobe/clothing/:id', desc: '更新衣物', body: { name: '', category: '', color: '', season: 'all' } },
-      { module: 'Wardrobe', name: '删除衣物', method: 'DELETE', path: '/wardrobe/clothing/:id', desc: '删除衣物' },
-      { module: 'Wardrobe', name: '搜索衣物', method: 'GET', path: '/wardrobe/clothing/search', desc: '搜索衣物', query: [{ name: 'q', desc: '搜索关键词', required: true }, { name: 'limit', desc: '数量上限', required: false }] },
-      { module: 'Wardrobe', name: '移动衣物', method: 'POST', path: '/wardrobe/clothing/:id/move', desc: '移动衣物到其他衣柜', body: { target_wardrobe_id: 2 } },
-      { module: 'Wardrobe', name: '自然语言移动', method: 'POST', path: '/wardrobe/clothing/move-nl', desc: '自然语言移动衣物', body: { command: '把蓝色牛仔裤移到鞋柜' } },
-      { module: 'Wardrobe', name: '衣柜统计', method: 'GET', path: '/wardrobe/stats', desc: '衣柜统计信息' },
+async function initTodo(){await Promise.all([loadTodos(),loadCategories()])}
 
-      // BillSplit
-      { module: 'BillSplit', name: '快捷分账', method: 'POST', path: '/billsplit/quick-split', desc: '自然语言一步分账，无状态', body: { input: '昨天火锅1200 土豆3大1小 新鲜2大 康康2大2小' } },
-      { module: 'BillSplit', name: '列出群组', method: 'GET', path: '/billsplit/groups', desc: '获取所有分账群组' },
-      { module: 'BillSplit', name: '创建群组', method: 'POST', path: '/billsplit/groups', desc: '创建分账群组', body: { name: '周末聚餐群', description: '每周末聚餐的分账' } },
-      { module: 'BillSplit', name: '群组详情', method: 'GET', path: '/billsplit/groups/:id', desc: '获取群组详情' },
-      { module: 'BillSplit', name: '更新群组', method: 'PUT', path: '/billsplit/groups/:id', desc: '更新群组', body: { name: '', description: '' } },
-      { module: 'BillSplit', name: '删除群组', method: 'DELETE', path: '/billsplit/groups/:id', desc: '删除群组及关联数据' },
-      { module: 'BillSplit', name: '添加家庭', method: 'POST', path: '/billsplit/groups/:id/families', desc: '添加家庭到群组', body: { name: '张家', color: '#3b82f6' } },
-      { module: 'BillSplit', name: '更新家庭', method: 'PUT', path: '/billsplit/families/:id', desc: '更新家庭信息', body: { name: '', color: '' } },
-      { module: 'BillSplit', name: '删除家庭', method: 'DELETE', path: '/billsplit/families/:id', desc: '删除家庭' },
-      { module: 'BillSplit', name: '列出账单', method: 'GET', path: '/billsplit/groups/:id/bills', desc: '获取群组账单列表', query: [{ name: 'page', desc: '页码', required: false }, { name: 'pageSize', desc: '每页数量', required: false }] },
-      { module: 'BillSplit', name: '创建账单', method: 'POST', path: '/billsplit/groups/:id/bills', desc: '创建账单', body: { title: '火锅聚餐', totalAmount: 580, billDate: '2026-03-08', participants: [{ familyId: 1, adultCount: 2, childCount: 1 }] } },
-      { module: 'BillSplit', name: '批量创建账单', method: 'POST', path: '/billsplit/groups/:id/bills/batch', desc: '批量创建账单', body: [{ title: '', totalAmount: 0, participants: [] }] },
-      { module: 'BillSplit', name: 'NLP解析账单', method: 'POST', path: '/billsplit/groups/:id/bills/parse', desc: '自然语言解析账单', body: { input: '上周六张家2大1小、李家2大一起吃了海底捞，花了580块' } },
-      { module: 'BillSplit', name: '从解析创建', method: 'POST', path: '/billsplit/groups/:id/bills/from-parsed', desc: '从NLP解析结果创建账单', body: { bills: [], confidence: 0, message: '' } },
-      { module: 'BillSplit', name: '账单详情', method: 'GET', path: '/billsplit/bills/:id', desc: '获取账单详情' },
-      { module: 'BillSplit', name: '更新账单', method: 'PUT', path: '/billsplit/bills/:id', desc: '更新账单', body: { title: '', totalAmount: 0, participants: [] } },
-      { module: 'BillSplit', name: '删除账单', method: 'DELETE', path: '/billsplit/bills/:id', desc: '删除账单' },
-
-      // FoodMap
-      { module: 'FoodMap', name: '列出商场', method: 'GET', path: '/foodmap/malls', desc: '获取所有商场', query: [{ name: 'page', desc: '页码', required: false }, { name: 'pageSize', desc: '每页数量', required: false }] },
-      { module: 'FoodMap', name: '地图范围查询', method: 'GET', path: '/foodmap/malls/bounds', desc: '按地图范围查询商场', query: [{ name: 'northLat', desc: '北纬', required: true }, { name: 'southLat', desc: '南纬', required: true }, { name: 'eastLng', desc: '东经', required: true }, { name: 'westLng', desc: '西经', required: true }] },
-      { module: 'FoodMap', name: '按区域查询', method: 'GET', path: '/foodmap/malls/district/:district', desc: '按区域查询商场' },
-      { module: 'FoodMap', name: '商场详情', method: 'GET', path: '/foodmap/malls/:id', desc: '获取商场详情' },
-      { module: 'FoodMap', name: '商场餐厅', method: 'GET', path: '/foodmap/malls/:id/restaurants', desc: '获取商场餐厅列表', query: [{ name: 'category', desc: '分类', required: false }, { name: 'minPrice', desc: '最低价', required: false }, { name: 'maxPrice', desc: '最高价', required: false }, { name: 'minRating', desc: '最低评分', required: false }, { name: 'search', desc: '搜索', required: false }, { name: 'page', desc: '页码', required: false }, { name: 'pageSize', desc: '每页数量', required: false }] },
-      { module: 'FoodMap', name: '标记核心', method: 'POST', path: '/foodmap/malls/:id/core', desc: '标记为核心商场' },
-      { module: 'FoodMap', name: '取消核心', method: 'DELETE', path: '/foodmap/malls/:id/core', desc: '取消核心商场标记' },
-      { module: 'FoodMap', name: '更新停车', method: 'PUT', path: '/foodmap/malls/:id/parking', desc: '更新停车信息', body: { hasZeekrCharger: true, chargingFreeParking: true, freeParking: false, freeParkingNote: '消费满200免2小时' } },
-      { module: 'FoodMap', name: '区域列表', method: 'GET', path: '/foodmap/districts', desc: '获取区域列表' },
-      { module: 'FoodMap', name: '餐厅分类', method: 'GET', path: '/foodmap/categories', desc: '获取餐厅分类列表' },
-      { module: 'FoodMap', name: '统计', method: 'GET', path: '/foodmap/stats', desc: '美食地图统计' },
-      { module: 'FoodMap', name: '核心关键词', method: 'GET', path: '/foodmap/core-keywords', desc: '核心商场关键词' },
-      { module: 'FoodMap', name: '测试API Key', method: 'POST', path: '/foodmap/sync/test-key', desc: '测试高德API Key' },
-      { module: 'FoodMap', name: '测试同步', method: 'POST', path: '/foodmap/sync/test-mall', desc: '测试单个商场同步' },
-      { module: 'FoodMap', name: '核心同步', method: 'POST', path: '/foodmap/sync/core', desc: '核心商场同步(异步)' },
-      { module: 'FoodMap', name: '增量同步', method: 'POST', path: '/foodmap/sync/incremental', desc: '增量同步(>7天的)' },
-      { module: 'FoodMap', name: '全量同步', method: 'POST', path: '/foodmap/sync/full', desc: '重置后全量同步' },
-      { module: 'FoodMap', name: '自动同步', method: 'POST', path: '/foodmap/sync/auto', desc: '智能判断是否需要同步' },
-      { module: 'FoodMap', name: '同步任务历史', method: 'GET', path: '/foodmap/sync/tasks', desc: '获取同步任务历史' },
-      { module: 'FoodMap', name: '列出收藏', method: 'GET', path: '/foodmap/favorites', desc: '获取收藏列表' },
-      { module: 'FoodMap', name: '添加收藏', method: 'POST', path: '/foodmap/favorites', desc: '添加餐厅收藏', body: { restaurant_id: 1, note: '味道很好', rating: 5 } },
-      { module: 'FoodMap', name: '删除收藏', method: 'DELETE', path: '/foodmap/favorites/:id', desc: '删除收藏' },
-
-      // Config
-      { module: 'Config', name: '获取配置', method: 'GET', path: '/config', desc: '获取系统配置' },
-      { module: 'Config', name: '更新API Key', method: 'PUT', path: '/config/api-key', desc: '更新Claude API Key', body: { api_key: 'sk-ant-...' } },
-      { module: 'Config', name: '更新API配置', method: 'PUT', path: '/config/api-config', desc: '更新Claude API配置', body: { api_key: '', base_url: '', model: '' } },
-      { module: 'Config', name: '更新主题', method: 'PUT', path: '/config/theme', desc: '更新主题', body: { theme: 'dark' } },
-      { module: 'Config', name: '更新Embedding', method: 'PUT', path: '/config/embedding', desc: '更新Embedding配置', body: { provider: 'openai', api_key: '', base_url: '', model: 'text-embedding-3-small' } },
-      { module: 'Config', name: '更新高德Key', method: 'PUT', path: '/config/amap-key', desc: '更新高德API Key', body: { api_key: '' } },
-      { module: 'Config', name: '更新火山引擎', method: 'PUT', path: '/config/volcengine', desc: '更新火山引擎ASR配置', body: { app_id: '', access_token: '' } },
-
-      // LLM
-      { module: 'LLM', name: '获取状态', method: 'GET', path: '/llm/status', desc: 'LLM状态和配置' },
-      { module: 'LLM', name: '探测LLM', method: 'POST', path: '/llm/probe', desc: '测试所有LLM连通性' },
-      { module: 'LLM', name: '探测Provider', method: 'POST', path: '/llm/probe/:name', desc: '测试指定Provider连通性' },
-      { module: 'LLM', name: '添加Fallback', method: 'POST', path: '/llm/fallback', desc: '添加Fallback Provider', body: { name: 'doubao', api_key: '', base_url: '', model: '', protocol: 'openai' } },
-      { module: 'LLM', name: '删除Fallback', method: 'DELETE', path: '/llm/fallback/:name', desc: '删除Fallback Provider' },
-
-      // SSE
-      { module: 'SSE', name: '天气进度', method: 'GET', path: '/events/weather', desc: '天气刷新SSE进度流' },
-      { module: 'SSE', name: '同步进度', method: 'GET', path: '/events/foodmap/sync', desc: 'FoodMap同步SSE进度流' },
-      { module: 'SSE', name: '导入进度', method: 'GET', path: '/events/foodmap/import', desc: 'FoodMap截图导入SSE进度流' },
-    ];
-
-    // ─── App Logic ───
-    let currentEndpoint = null;
-
-    function initApp() {
-      // Restore settings
-      const savedUrl = localStorage.getItem('ls-api-base-url');
-      const savedToken = localStorage.getItem('ls-api-token');
-      if (savedUrl) document.getElementById('base-url-select').value = savedUrl;
-      if (savedToken) document.getElementById('bearer-token').value = savedToken;
-
-      // Save on change
-      document.getElementById('base-url-select').addEventListener('change', e => localStorage.setItem('ls-api-base-url', e.target.value));
-      document.getElementById('bearer-token').addEventListener('input', e => localStorage.setItem('ls-api-token', e.target.value));
-
-      renderSidebar();
-      document.getElementById('send-btn').addEventListener('click', sendRequest);
-    }
-
-    function renderSidebar() {
-      const list = document.getElementById('endpoints-list');
-      const modules = {};
-      ENDPOINTS.forEach((ep, idx) => {
-        if (!modules[ep.module]) modules[ep.module] = [];
-        modules[ep.module].push({ ...ep, idx });
-      });
-
-      let html = '';
-      for (const [mod, eps] of Object.entries(modules)) {
-        html += `<div class="module-group">
-          <button class="w-full flex items-center justify-between px-3 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors" onclick="toggleModule(this)">
-            <span>${mod}</span>
-            <svg class="w-3 h-3 transform transition-transform rotate-0 module-arrow" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
-          </button>
-          <div class="module-endpoints hidden">`;
-        for (const ep of eps) {
-          html += `<div class="endpoint-item flex items-center gap-2 px-3 py-1.5 text-xs" data-idx="${ep.idx}" onclick="selectEndpoint(${ep.idx})">
-            <span class="method-badge ${ep.method.toLowerCase()}">${ep.method}</span>
-            <span class="text-gray-600 dark:text-gray-400 truncate">${ep.name}</span>
-          </div>`;
-        }
-        html += `</div></div>`;
-      }
-      list.innerHTML = html;
-    }
-
-    window.toggleModule = function(btn) {
-      const eps = btn.nextElementSibling;
-      const arrow = btn.querySelector('.module-arrow');
-      eps.classList.toggle('hidden');
-      arrow.classList.toggle('rotate-180');
-    };
-
-    window.selectEndpoint = function(idx) {
-      currentEndpoint = ENDPOINTS[idx];
-
-      // Update active state
-      document.querySelectorAll('.endpoint-item').forEach(el => el.classList.remove('active'));
-      document.querySelector(`[data-idx="${idx}"]`)?.classList.add('active');
-
-      // Show detail
-      document.getElementById('empty-state').classList.add('hidden');
-      const detail = document.getElementById('endpoint-detail');
-      detail.classList.remove('hidden');
-
-      const ep = currentEndpoint;
-      const methodEl = document.getElementById('detail-method');
-      methodEl.textContent = ep.method;
-      methodEl.className = `method-badge ${ep.method.toLowerCase()}`;
-      document.getElementById('detail-path').textContent = `/api/v1${ep.path}`;
-      document.getElementById('detail-desc').textContent = ep.desc;
-
-      // Path params
-      const pathParams = (ep.path.match(/:(\w+)/g) || []).map(p => p.slice(1));
-      const ppSection = document.getElementById('path-params-section');
-      const ppContainer = document.getElementById('path-params');
-      if (pathParams.length) {
-        ppSection.classList.remove('hidden');
-        ppContainer.innerHTML = pathParams.map(p => `
-          <div class="flex items-center gap-2">
-            <label class="text-xs text-gray-500 w-24 shrink-0 font-mono">:${p}</label>
-            <input type="text" class="path-param flex-1 px-2 py-1.5 text-xs bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg focus:outline-none" data-param="${p}" placeholder="Enter ${p}">
+async function loadTodos(){
+  loading('todo-list');
+  try{
+    const paths={all:'/todos',today:'/todos/today',upcoming:'/todos/upcoming',pending:'/todos/pending',completed:'/todos/completed'};
+    const data=await GET(paths[todoFilter]);
+    if(!data?.length){empty('todo-list','暂无待办');return}
+    document.getElementById('todo-list').innerHTML=data.map(t=>`
+      <div class="card mb-2 flex items-start gap-3 pri-${t.priority}">
+        <button onclick="todoComplete(${t.id})" class="mt-1 w-5 h-5 rounded-full border-2 shrink-0 flex items-center justify-center text-xs ${t.status===2?'bg-green-500 border-green-500 text-white':'border-gray-300 dark:border-gray-600 hover:border-blue-500'}">${t.status===2?'✓':''}</button>
+        <div class="flex-1 min-w-0">
+          <div class="text-sm font-medium ${t.status===2?'line-through text-gray-400':''}">${t.title}</div>
+          ${t.description?`<div class="text-xs text-gray-400 mt-0.5 truncate">${t.description}</div>`:''}
+          <div class="flex items-center gap-2 mt-1 flex-wrap">
+            <span class="badge" style="background:${PRI_COLORS[t.priority]}20;color:${PRI_COLORS[t.priority]}">${PRI_LABELS[t.priority]}</span>
+            ${t.category?`<span class="badge" style="background:${t.category.color}20;color:${t.category.color}">${t.category.icon||''} ${t.category.name}</span>`:''}
+            ${t.dueDate?`<span class="text-xs text-gray-400">📅 ${fmtDate(t.dueDate)}</span>`:''}
+            ${t.tags?.map(g=>`<span class="badge bg-gray-100 dark:bg-gray-800 text-gray-500">${g.name}</span>`).join('')||''}
           </div>
-        `).join('');
-      } else {
-        ppSection.classList.add('hidden');
-      }
+        </div>
+        <button onclick="todoDel(${t.id})" class="text-gray-300 hover:text-red-500 text-sm shrink-0">🗑</button>
+      </div>
+    `).join('');
+  }catch(e){document.getElementById('todo-list').innerHTML=`<div class="text-xs text-red-500">${e.message}</div>`}
+}
 
-      // Query params
-      const qpSection = document.getElementById('query-params-section');
-      const qpContainer = document.getElementById('query-params');
-      if (ep.query?.length) {
-        qpSection.classList.remove('hidden');
-        qpContainer.innerHTML = ep.query.map(q => `
-          <div class="flex items-center gap-2">
-            <label class="text-xs text-gray-500 w-24 shrink-0 font-mono">${q.name}${q.required ? '*' : ''}</label>
-            <input type="text" class="query-param flex-1 px-2 py-1.5 text-xs bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg focus:outline-none" data-param="${q.name}" placeholder="${q.desc}">
-          </div>
-        `).join('');
-      } else {
-        qpSection.classList.add('hidden');
-      }
+window.todoComplete=async function(id){try{await POST(`/todos/${id}/complete`);toast('已完成');loadTodos()}catch(e){toast(e.message,false)}};
+window.todoDel=async function(id){try{await DEL(`/todos/${id}`);toast('已删除');loadTodos()}catch(e){toast(e.message,false)}};
 
-      // Body
-      const bodySection = document.getElementById('body-section');
-      if (ep.body !== undefined) {
-        bodySection.classList.remove('hidden');
-        document.getElementById('body-editor').value = JSON.stringify(ep.body, null, 2);
-      } else {
-        bodySection.classList.add('hidden');
-      }
+window.todoNlpCreate=async function(){
+  const input=document.getElementById('todo-nlp').value.trim();if(!input)return;
+  try{
+    const parsed=await POST('/nlp/parse',{input});
+    await POST('/nlp/execute',parsed);
+    toast('待办已创建');document.getElementById('todo-nlp').value='';loadTodos();
+  }catch(e){toast(e.message,false)}
+};
 
-      // Clear response
-      document.getElementById('response-section').classList.add('hidden');
-      document.getElementById('response-time').classList.add('hidden');
-    };
+window.todoSearch=async function(){
+  const q=document.getElementById('todo-search').value.trim();
+  if(!q){loadTodos();return}
+  try{const d=await GET(`/todos/search?q=${encodeURIComponent(q)}`);
+    if(!d?.length){empty('todo-list','无搜索结果');return}
+    // reuse render
+    todoFilter='all';loadTodos();
+  }catch(e){toast(e.message,false)}
+};
 
-    function syntaxHighlight(json) {
-      if (typeof json !== 'string') json = JSON.stringify(json, null, 2);
-      return json
-        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-        .replace(/("(\\u[\da-fA-F]{4}|\\[^u]|[^\\"])*"(\s*:)?)/g, (match) => {
-          if (/:$/.test(match)) return `<span class="json-key">${match}</span>`;
-          return `<span class="json-string">${match}</span>`;
-        })
-        .replace(/\b(-?\d+\.?\d*([eE][+-]?\d+)?)\b/g, '<span class="json-number">$1</span>')
-        .replace(/\b(true|false)\b/g, '<span class="json-boolean">$1</span>')
-        .replace(/\bnull\b/g, '<span class="json-null">null</span>');
+window.showTodoModal=function(){
+  showModal(`
+    <h3 class="text-sm font-bold mb-4">新建待办</h3>
+    <div class="space-y-3">
+      <input id="m-todo-title" class="input" placeholder="标题 *">
+      <textarea id="m-todo-desc" class="input" rows="2" placeholder="描述"></textarea>
+      <div class="flex gap-2">
+        <select id="m-todo-pri" class="input"><option value="0">低</option><option value="1" selected>中</option><option value="2">高</option><option value="3">紧急</option></select>
+        <input id="m-todo-due" type="datetime-local" class="input">
+      </div>
+      <input id="m-todo-tags" class="input" placeholder="标签（逗号分隔）">
+      <div class="flex justify-end gap-2"><button onclick="closeModal()" class="btn btn-ghost">取消</button><button onclick="todoCreate()" class="btn btn-primary">创建</button></div>
+    </div>
+  `);
+};
+
+window.todoCreate=async function(){
+  const title=document.getElementById('m-todo-title').value.trim();if(!title){toast('请输入标题',false);return}
+  const body={title,description:document.getElementById('m-todo-desc').value,priority:+document.getElementById('m-todo-pri').value};
+  const due=document.getElementById('m-todo-due').value;if(due)body.dueDate=new Date(due).toISOString();
+  const tags=document.getElementById('m-todo-tags').value.split(',').map(s=>s.trim()).filter(Boolean);if(tags.length)body.tags=tags;
+  try{await POST('/todos',body);toast('创建成功');closeModal();loadTodos()}catch(e){toast(e.message,false)}
+};
+
+// Categories
+let categories=[];
+async function loadCategories(){
+  try{categories=await GET('/categories')||[];
+    document.getElementById('cat-list').innerHTML=categories.map(c=>`
+      <div class="badge flex items-center gap-1" style="background:${c.color}20;color:${c.color};padding:4px 10px">
+        ${c.icon||''} ${c.name}
+        <button onclick="catDel(${c.id})" class="ml-1 hover:text-red-500">×</button>
+      </div>
+    `).join('')||'<span class="text-xs text-gray-400">暂无分类</span>';
+  }catch{}
+}
+window.catDel=async function(id){try{await DEL(`/categories/${id}`);toast('已删除');loadCategories()}catch(e){toast(e.message,false)}};
+window.showCatModal=function(){
+  showModal(`<h3 class="text-sm font-bold mb-4">新建分类</h3><div class="space-y-3">
+    <input id="m-cat-name" class="input" placeholder="名称 *">
+    <div class="flex gap-2"><input id="m-cat-color" type="color" value="#3b82f6" class="w-10 h-10 rounded cursor-pointer"><input id="m-cat-icon" class="input flex-1" placeholder="图标 emoji"></div>
+    <div class="flex justify-end gap-2"><button onclick="closeModal()" class="btn btn-ghost">取消</button><button onclick="catCreate()" class="btn btn-primary">创建</button></div></div>`);
+};
+window.catCreate=async function(){
+  const name=document.getElementById('m-cat-name').value.trim();if(!name){toast('请输入名称',false);return}
+  try{await POST('/categories',{name,color:document.getElementById('m-cat-color').value,icon:document.getElementById('m-cat-icon').value});toast('创建成功');closeModal();loadCategories()}catch(e){toast(e.message,false)}
+};
+
+// ══════════════════════════════════════
+//  Knowledge
+// ══════════════════════════════════════
+initTabs('[data-kt]',t=>{
+  document.getElementById('k-base').classList.toggle('hidden',t!=='base');
+  document.getElementById('k-chat').classList.toggle('hidden',t!=='chat');
+  if(t==='chat')loadChatSessions();
+});
+
+async function initKnowledge(){await loadKnowledge();loadKStats()}
+
+async function loadKnowledge(){
+  loading('k-list');
+  try{const d=await GET('/knowledge?page=1&pageSize=50');
+    const items=d?.entries||d||[];
+    if(!items.length){empty('k-list');return}
+    document.getElementById('k-list').innerHTML=items.map(k=>`
+      <div class="card mb-2">
+        <div class="text-sm font-medium">${k.title||'无标题'}</div>
+        <div class="text-xs text-gray-400 mt-1 line-clamp-2">${k.summary||k.content?.slice(0,100)||''}</div>
+        <div class="flex items-center gap-2 mt-2">
+          ${k.tags?.map(t=>`<span class="badge bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400">${t.name}</span>`).join('')||''}
+          <span class="text-xs text-gray-400 ml-auto">${fmtDate(k.createdAt)}</span>
+          <button onclick="kDel(${k.id})" class="text-gray-300 hover:text-red-500 text-xs">🗑</button>
+        </div>
+      </div>
+    `).join('');
+  }catch(e){document.getElementById('k-list').innerHTML=`<div class="text-xs text-red-500">${e.message}</div>`}
+}
+
+async function loadKStats(){
+  try{const s=await GET('/knowledge/stats');
+    document.getElementById('k-stats').innerHTML=`<span>条目: ${s.total}</span><span>Embedding: ${s.withEmbedding}</span><span>标签: ${s.tagCount}</span><span>实体: ${s.entityCount}</span>`;
+  }catch{}
+}
+
+window.kSearch=async function(){
+  const q=document.getElementById('k-search').value.trim();
+  if(!q){loadKnowledge();return}
+  loading('k-list');
+  try{const d=await GET(`/knowledge/search?q=${encodeURIComponent(q)}`);
+    if(!d?.length){empty('k-list','无搜索结果');return}
+    document.getElementById('k-list').innerHTML=d.map(k=>`<div class="card mb-2"><div class="text-sm font-medium">${k.title||'无标题'}</div><div class="text-xs text-gray-400 mt-1">${k.summary||''}</div></div>`).join('');
+  }catch(e){toast(e.message,false)}
+};
+
+window.kDel=async function(id){try{await DEL(`/knowledge/${id}`);toast('已删除');loadKnowledge();loadKStats()}catch(e){toast(e.message,false)}};
+
+window.showKModal=function(){
+  showModal(`<h3 class="text-sm font-bold mb-4">新建知识</h3><div class="space-y-3">
+    <textarea id="m-k-content" class="input" rows="6" placeholder="输入知识内容...（AI 自动提取标题、摘要、关键词）"></textarea>
+    <input id="m-k-tags" class="input" placeholder="标签（逗号分隔）">
+    <div class="flex justify-end gap-2"><button onclick="closeModal()" class="btn btn-ghost">取消</button><button onclick="kCreate()" class="btn btn-primary">创建</button></div></div>`);
+};
+window.kCreate=async function(){
+  const content=document.getElementById('m-k-content').value.trim();if(!content){toast('请输入内容',false);return}
+  const tags=document.getElementById('m-k-tags').value.split(',').map(s=>s.trim()).filter(Boolean);
+  try{await POST('/knowledge',{content,tags});toast('创建成功');closeModal();loadKnowledge();loadKStats()}catch(e){toast(e.message,false)}
+};
+
+// Chat
+let chatSessionId=0;
+async function loadChatSessions(){
+  try{const d=await GET('/knowledge/chat/sessions')||[];
+    document.getElementById('chat-sessions').innerHTML=d.map(s=>`
+      <div class="text-xs p-2 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 ${s.id===chatSessionId?'bg-blue-50 dark:bg-blue-900/30':''}" onclick="chatLoad(${s.id})">
+        <div class="font-medium truncate">${s.title||'新对话'}</div>
+        <div class="text-gray-400">${fmtDate(s.updatedAt)}</div>
+      </div>
+    `).join('')||'<div class="text-xs text-gray-400 text-center">暂无会话</div>';
+  }catch{}
+}
+
+window.chatLoad=async function(id){
+  chatSessionId=id;loadChatSessions();
+  try{const d=await GET(`/knowledge/chat/sessions/${id}`);
+    document.getElementById('chat-messages').innerHTML=(d.messages||[]).map(m=>`
+      <div class="flex ${m.role==='user'?'justify-end':'justify-start'}">
+        <div class="chat-bubble ${m.role==='user'?'chat-user':'chat-bot'}">${m.content}</div>
+      </div>
+    `).join('');
+    document.getElementById('chat-messages').scrollTop=99999;
+  }catch(e){toast(e.message,false)}
+};
+
+window.chatNewSession=function(){chatSessionId=0;document.getElementById('chat-messages').innerHTML='<div class="empty-state">开始新对话</div>';loadChatSessions()};
+
+window.chatSend=async function(){
+  const input=document.getElementById('chat-input');const q=input.value.trim();if(!q)return;
+  // Show user message
+  const msgs=document.getElementById('chat-messages');
+  msgs.innerHTML+=`<div class="flex justify-end"><div class="chat-bubble chat-user">${q}</div></div>`;
+  msgs.innerHTML+=`<div class="flex justify-start"><div class="chat-bubble chat-bot"><div class="spinner" style="width:14px;height:14px"></div></div></div>`;
+  msgs.scrollTop=99999;input.value='';
+  try{
+    const d=await POST(`/knowledge/chat/sessions/${chatSessionId}/ask`,{question:q});
+    if(d.isNewSession||chatSessionId===0){chatSessionId=d.sessionId;loadChatSessions()}
+    // Replace spinner with response
+    const bubbles=msgs.querySelectorAll('.chat-bot');
+    const last=bubbles[bubbles.length-1];
+    last.textContent=d.message;
+    if(d.referencedKnowledge?.length){
+      last.innerHTML+=`<div class="mt-2 pt-2 border-t border-gray-300 dark:border-gray-600 text-xs text-gray-500">参考: ${d.referencedKnowledge.map(k=>k.title).join(', ')}</div>`;
     }
+    msgs.scrollTop=99999;
+  }catch(e){toast(e.message,false);const bubbles=msgs.querySelectorAll('.chat-bot');bubbles[bubbles.length-1].textContent='发送失败: '+e.message}
+};
 
-    async function sendRequest() {
-      if (!currentEndpoint) return;
-      const ep = currentEndpoint;
-      const baseUrl = document.getElementById('base-url-select').value;
-      const token = document.getElementById('bearer-token').value;
+// ══════════════════════════════════════
+//  LayerOS
+// ══════════════════════════════════════
+async function initLayerOS(){await Promise.all([loadWeather(),loadOutfit(),loadGears()])}
 
-      // Build URL
-      let path = ep.path;
-      document.querySelectorAll('.path-param').forEach(input => {
-        path = path.replace(`:${input.dataset.param}`, encodeURIComponent(input.value));
-      });
+async function loadWeather(){
+  loading('weather-cards');
+  try{
+    const d=await GET('/layeros/weather/cache')||await GET('/layeros/weather');
+    if(!d?.length){document.getElementById('weather-cards').innerHTML='<div class="text-xs text-gray-400">暂无天气数据</div>';return}
+    document.getElementById('weather-cards').innerHTML=d.map(w=>`
+      <div class="card weather-card shrink-0">
+        <div class="text-xs text-gray-400">${fmtDate(w.date)}</div>
+        <div class="text-xl font-bold mt-1">${w.tempMin}°~${w.tempMax}°</div>
+        <div class="text-xs mt-1">${w.condition||''}</div>
+        <div class="text-xs text-gray-400 mt-1">💧${w.humidity}% 💨${w.windSpeed}m/s</div>
+        <div class="text-xs text-gray-400">体感 ${w.realFeelMin}°~${w.realFeelMax}°</div>
+      </div>
+    `).join('');
+    const ct=await GET('/layeros/weather/cache-time').catch(()=>null);
+    if(ct?.cache_time)document.getElementById('weather-cache-time').textContent=`缓存: ${fmtDateTime(ct.cache_time)}`;
+  }catch(e){document.getElementById('weather-cards').innerHTML=`<div class="text-xs text-red-500">${e.message}</div>`}
+}
 
-      // Query params
-      const queryParts = [];
-      document.querySelectorAll('.query-param').forEach(input => {
-        if (input.value) queryParts.push(`${input.dataset.param}=${encodeURIComponent(input.value)}`);
-      });
-      const queryString = queryParts.length ? '?' + queryParts.join('&') : '';
-      const url = `${baseUrl}${path}${queryString}`;
+window.weatherRefresh=async function(){try{await POST('/layeros/weather/refresh');toast('刷新中...');setTimeout(loadWeather,2000)}catch(e){toast(e.message,false)}};
 
-      // Headers
-      const headers = {};
-      if (token) headers['Authorization'] = `Bearer ${token}`;
+async function loadOutfit(){
+  loading('outfit-cards');
+  try{const d=await GET('/layeros/outfit/cache')||[];
+    if(!d.length){document.getElementById('outfit-cards').innerHTML='<div class="text-xs text-gray-400">暂无穿搭推荐，请先刷新天气</div>';return}
+    document.getElementById('outfit-cards').innerHTML=d.map(o=>`
+      <div class="card">
+        <div class="text-xs text-gray-400 mb-1">${o.date||''} · ${o.tempRange||''}</div>
+        <div class="space-y-1 mb-2">${(o.layers||[]).map(l=>`<div class="text-sm">👕 ${l}</div>`).join('')}</div>
+        <div class="text-xs text-gray-400">${o.explanation||''}</div>
+      </div>
+    `).join('');
+  }catch(e){document.getElementById('outfit-cards').innerHTML=`<div class="text-xs text-red-500">${e.message}</div>`}
+}
 
-      // Body
-      const options = { method: ep.method, headers };
-      if (ep.body !== undefined && ['POST', 'PUT', 'PATCH'].includes(ep.method)) {
-        headers['Content-Type'] = 'application/json';
-        options.body = document.getElementById('body-editor').value;
-      }
+async function loadGears(){
+  loading('gear-list');
+  try{const d=await GET('/layeros/gears')||[];
+    if(!d.length){empty('gear-list','暂无服装，请添加');return}
+    document.getElementById('gear-list').innerHTML=d.map(g=>`
+      <div class="card mb-2 flex items-center justify-between">
+        <div><div class="text-sm font-medium">${g.name}</div><div class="text-xs text-gray-400">${g.brand||''} · ${g.layer} · CLO ${g.clo??'—'}</div></div>
+        <button onclick="gearDel(${g.id})" class="text-gray-300 hover:text-red-500">🗑</button>
+      </div>
+    `).join('');
+  }catch(e){document.getElementById('gear-list').innerHTML=`<div class="text-xs text-red-500">${e.message}</div>`}
+}
 
-      // Send
-      const btn = document.getElementById('send-btn');
-      btn.disabled = true;
-      btn.textContent = 'Sending...';
+window.gearDel=async function(id){try{await DEL(`/layeros/gears/${id}`);toast('已删除');loadGears()}catch(e){toast(e.message,false)}};
 
-      const start = performance.now();
-      try {
-        const res = await fetch(url, options);
-        const elapsed = Math.round(performance.now() - start);
+window.showGearModal=function(){
+  showModal(`<h3 class="text-sm font-bold mb-4">添加服装</h3><div class="space-y-3">
+    <input id="m-gear-name" class="input" placeholder="名称 *">
+    <input id="m-gear-brand" class="input" placeholder="品牌">
+    <input id="m-gear-desc" class="input" placeholder="描述">
+    <select id="m-gear-layer" class="input"><option value="L1_Base">L1 基础层</option><option value="L2_Mid">L2 中间层</option><option value="L3_Insul">L3 保暖层</option><option value="L4_Shell">L4 外壳层</option><option value="Bottom">下装</option><option value="Accessory">配饰</option></select>
+    <div class="flex justify-end gap-2"><button onclick="closeModal()" class="btn btn-ghost">取消</button><button onclick="gearCreate()" class="btn btn-primary">添加</button></div></div>`);
+};
 
-        let data;
-        const contentType = res.headers.get('content-type') || '';
-        if (contentType.includes('json')) {
-          data = await res.json();
-        } else {
-          data = await res.text();
-        }
+window.gearCreate=async function(){
+  const name=document.getElementById('m-gear-name').value.trim();if(!name){toast('请输入名称',false);return}
+  try{await POST('/layeros/gears',{name,brand:document.getElementById('m-gear-brand').value,description:document.getElementById('m-gear-desc').value,layer:document.getElementById('m-gear-layer').value});toast('添加成功');closeModal();loadGears()}catch(e){toast(e.message,false)}
+};
 
-        // Show response
-        document.getElementById('response-section').classList.remove('hidden');
-        const statusEl = document.getElementById('response-status');
-        statusEl.textContent = `${res.status} ${res.statusText}`;
-        statusEl.className = `text-xs font-mono px-2 py-0.5 rounded ${res.ok ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'}`;
+window.showGearNlp=function(){
+  showModal(`<h3 class="text-sm font-bold mb-4">🗣 自然语言添加服装</h3><div class="space-y-3">
+    <textarea id="m-gear-nlp" class="input" rows="3" placeholder="我有一件始祖鸟的 Beta LT 冲锋衣，GORE-TEX 面料，防风防水"></textarea>
+    <div class="flex justify-end gap-2"><button onclick="closeModal()" class="btn btn-ghost">取消</button><button onclick="gearNlpCreate()" class="btn btn-primary">AI 识别</button></div></div>`);
+};
 
-        const timeEl = document.getElementById('response-time');
-        timeEl.textContent = `${elapsed}ms`;
-        timeEl.classList.remove('hidden');
+window.gearNlpCreate=async function(){
+  const input=document.getElementById('m-gear-nlp').value.trim();if(!input)return;
+  try{await POST('/layeros/gears/chat',{input});toast('添加成功');closeModal();loadGears()}catch(e){toast(e.message,false)}
+};
 
-        const bodyEl = document.getElementById('response-body');
-        if (typeof data === 'object') {
-          bodyEl.innerHTML = syntaxHighlight(data);
-        } else {
-          bodyEl.textContent = data;
-        }
-      } catch (err) {
-        document.getElementById('response-section').classList.remove('hidden');
-        const statusEl = document.getElementById('response-status');
-        statusEl.textContent = 'Error';
-        statusEl.className = 'text-xs font-mono px-2 py-0.5 rounded bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400';
-        document.getElementById('response-body').textContent = err.message;
-        document.getElementById('response-time').classList.add('hidden');
-      } finally {
-        btn.disabled = false;
-        btn.textContent = 'Send Request';
-      }
-    }
+// ══════════════════════════════════════
+//  Wardrobe
+// ══════════════════════════════════════
+async function initWardrobe(){await loadFloorplans();await loadWdStats()}
 
-    // Init
-    checkAuth();
-  </script>
+async function loadFloorplans(){
+  try{const d=await GET('/wardrobe/floorplans')||[];
+    const sel=document.getElementById('wd-floorplan');
+    sel.innerHTML=d.map(f=>`<option value="${f.id}">${f.name}${f.isDefault?' (默认)':''}</option>`).join('')||'<option value="">无平面图</option>';
+    if(d.length)wdLoadFloorplan();
+  }catch(e){toast(e.message,false)}
+}
+
+async function loadWdStats(){
+  try{const s=await GET('/wardrobe/stats');
+    document.getElementById('wd-stats').innerHTML=`
+      <div class="card stat-card flex-1"><div class="stat-num">${s.floorPlanCount}</div><div class="stat-label">平面图</div></div>
+      <div class="card stat-card flex-1"><div class="stat-num">${s.wardrobeCount}</div><div class="stat-label">衣柜</div></div>
+      <div class="card stat-card flex-1"><div class="stat-num">${s.clothingCount}</div><div class="stat-label">衣物</div></div>
+    `;
+  }catch{}
+}
+
+window.wdLoadFloorplan=async function(){
+  const id=document.getElementById('wd-floorplan').value;if(!id)return;
+  loading('wd-wardrobes');
+  try{
+    // Try default endpoint for the selected floorplan details or use the list
+    const fp=await GET(`/wardrobe/floorplans/default`);
+    const wardrobes=fp?.wardrobes||[];
+    if(!wardrobes.length){empty('wd-wardrobes','暂无衣柜');return}
+    const ICONS={wardrobe:'🗄',closet:'👗',drawer:'🗃',shoebox:'👟'};
+    document.getElementById('wd-wardrobes').innerHTML=wardrobes.map(w=>`
+      <div class="card cursor-pointer hover:border-blue-400 transition-colors" onclick="wdOpenWardrobe(${w.id},'${w.name}')">
+        <div class="text-2xl mb-2">${ICONS[w.iconType]||'🗄'}</div>
+        <div class="text-sm font-medium">${w.name}</div>
+        <div class="text-xs text-gray-400">${w.itemCount??0} 件衣物</div>
+      </div>
+    `).join('');
+  }catch(e){document.getElementById('wd-wardrobes').innerHTML=`<div class="text-xs text-red-500">${e.message}</div>`}
+};
+
+window.wdOpenWardrobe=async function(id,name){
+  document.getElementById('wd-clothing').classList.remove('hidden');
+  document.getElementById('wd-clothing-title').textContent=name;
+  loading('wd-clothing-list');
+  try{const d=await GET(`/wardrobe/wardrobes/${id}`);
+    const items=d?.items||d?.clothing||[];
+    if(!items.length){empty('wd-clothing-list','暂无衣物');return}
+    document.getElementById('wd-clothing-list').innerHTML=items.map(c=>`
+      <div class="card mb-2 flex items-center justify-between">
+        <div><div class="text-sm font-medium">${c.name}</div><div class="text-xs text-gray-400">${c.category||''} · ${c.color||''} · ${c.season||''}</div></div>
+        <button onclick="wdDelClothing(${c.id})" class="text-gray-300 hover:text-red-500">🗑</button>
+      </div>
+    `).join('');
+  }catch(e){toast(e.message,false)}
+};
+
+window.wdDelClothing=async function(id){try{await DEL(`/wardrobe/clothing/${id}`);toast('已删除');wdLoadFloorplan();loadWdStats()}catch(e){toast(e.message,false)}};
+
+window.showWdSearch=function(){
+  showModal(`<h3 class="text-sm font-bold mb-4">🔍 搜索衣物</h3><div class="space-y-3">
+    <input id="m-wd-q" class="input" placeholder="搜索关键词...">
+    <button onclick="wdSearch()" class="btn btn-primary w-full">搜索</button>
+    <div id="m-wd-results"></div></div>`);
+};
+
+window.wdSearch=async function(){
+  const q=document.getElementById('m-wd-q').value.trim();if(!q)return;
+  try{const d=await GET(`/wardrobe/clothing/search?q=${encodeURIComponent(q)}`)||[];
+    document.getElementById('m-wd-results').innerHTML=d.length?d.map(r=>`
+      <div class="py-2 border-t border-gray-100 dark:border-gray-800">
+        <div class="text-sm font-medium">${r.item?.name||''}</div>
+        <div class="text-xs text-gray-400">${r.wardrobe?.name||''} · ${r.floorPlan?.name||''} ${r.similarity?`· 相似度 ${(r.similarity*100).toFixed(0)}%`:''}</div>
+      </div>
+    `).join(''):'<div class="text-xs text-gray-400 mt-2">无结果</div>';
+  }catch(e){toast(e.message,false)}
+};
+
+window.showWdNewWardrobe=function(){
+  showModal(`<h3 class="text-sm font-bold mb-4">新建衣柜</h3><div class="space-y-3">
+    <input id="m-wd-name" class="input" placeholder="名称 *">
+    <select id="m-wd-type" class="input"><option value="wardrobe">衣柜</option><option value="closet">衣橱</option><option value="drawer">抽屉柜</option><option value="shoebox">鞋柜</option></select>
+    <input id="m-wd-color" type="color" value="#3b82f6" class="w-10 h-10 rounded cursor-pointer">
+    <div class="flex justify-end gap-2"><button onclick="closeModal()" class="btn btn-ghost">取消</button><button onclick="wdCreateWardrobe()" class="btn btn-primary">创建</button></div></div>`);
+};
+
+window.wdCreateWardrobe=async function(){
+  const name=document.getElementById('m-wd-name').value.trim();if(!name){toast('请输入名称',false);return}
+  const fpId=+document.getElementById('wd-floorplan').value;if(!fpId){toast('请先创建平面图',false);return}
+  try{await POST('/wardrobe/wardrobes',{floorPlanId:fpId,name,iconType:document.getElementById('m-wd-type').value,color:document.getElementById('m-wd-color').value});toast('创建成功');closeModal();wdLoadFloorplan();loadWdStats()}catch(e){toast(e.message,false)}
+};
+
+// ══════════════════════════════════════
+//  BillSplit
+// ══════════════════════════════════════
+initTabs('[data-bt]',t=>{
+  document.getElementById('bs-quick').classList.toggle('hidden',t!=='quick');
+  document.getElementById('bs-groups').classList.toggle('hidden',t!=='groups');
+  if(t==='groups')loadBsGroups();
+});
+
+async function initBillSplit(){}
+
+window.bsQuickSplit=async function(){
+  const input=document.getElementById('bs-input').value.trim();if(!input)return;
+  loading('bs-result');
+  try{const d=await POST('/billsplit/quick-split',{input});
+    if(!d?.bills?.length){document.getElementById('bs-result').innerHTML='<div class="text-xs text-gray-400">无法解析</div>';return}
+    document.getElementById('bs-result').innerHTML=d.bills.map(b=>`
+      <div class="card mb-4">
+        <div class="flex items-center justify-between mb-3">
+          <div class="text-sm font-bold">${b.title}</div>
+          <div class="text-lg font-bold text-blue-600">¥${b.totalAmount}</div>
+        </div>
+        <table class="w-full text-xs">
+          <thead><tr class="text-gray-400"><th class="text-left py-1">家庭</th><th class="text-center">大人</th><th class="text-center">小孩</th><th class="text-center">权重</th><th class="text-right">金额</th></tr></thead>
+          <tbody>${b.participants.map(p=>`<tr class="border-t border-gray-100 dark:border-gray-800"><td class="py-2 font-medium">${p.familyName}</td><td class="text-center">${p.adultCount}</td><td class="text-center">${p.childCount||0}</td><td class="text-center">${p.totalWeight}</td><td class="text-right font-bold">¥${p.amount.toFixed(2)}</td></tr>`).join('')}</tbody>
+        </table>
+      </div>
+    `).join('')+`<div class="text-xs text-gray-400">${d.message||''} · 置信度: ${((d.confidence||0)*100).toFixed(0)}%</div>`;
+  }catch(e){document.getElementById('bs-result').innerHTML=`<div class="text-xs text-red-500">${e.message}</div>`}
+};
+
+async function loadBsGroups(){
+  loading('bs-group-list');
+  try{const d=await GET('/billsplit/groups')||[];
+    if(!d.length){empty('bs-group-list','暂无群组');return}
+    document.getElementById('bs-group-list').innerHTML=d.map(g=>`
+      <div class="card mb-2 cursor-pointer hover:border-blue-400" onclick="bsOpenGroup(${g.id})">
+        <div class="text-sm font-medium">${g.name}</div>
+        <div class="text-xs text-gray-400">${g.description||''} · ${fmtDate(g.updatedAt)}</div>
+      </div>
+    `).join('');
+  }catch(e){toast(e.message,false)}
+}
+
+window.bsOpenGroup=async function(id){
+  const detail=document.getElementById('bs-group-detail');detail.classList.remove('hidden');
+  loading('bs-group-detail');
+  try{const g=await GET(`/billsplit/groups/${id}`);
+    const bills=await GET(`/billsplit/groups/${id}/bills`)||[];
+    detail.innerHTML=`
+      <div class="card mb-4">
+        <div class="flex items-center justify-between mb-2"><div class="text-sm font-bold">${g.name}</div><span class="text-xs text-gray-400">总支出: ¥${g.totalSpent||0}</span></div>
+        <div class="flex gap-2 flex-wrap mb-3">${(g.families||[]).map(f=>`<span class="badge" style="background:${f.color||'#6b7280'}20;color:${f.color||'#6b7280'}">${f.name}</span>`).join('')||'<span class="text-xs text-gray-400">暂无家庭</span>'}</div>
+        <div class="flex gap-2">
+          <button onclick="showBsAddFamily(${id})" class="btn btn-ghost text-xs">+ 家庭</button>
+          <button onclick="showBsAddBill(${id})" class="btn btn-primary text-xs">+ 账单</button>
+          <button onclick="showBsNlpBill(${id})" class="btn btn-ghost text-xs">🗣 语音账单</button>
+        </div>
+      </div>
+      <div class="section-title">账单历史</div>
+      ${Array.isArray(bills)&&bills.length?bills.map(b=>`
+        <div class="card mb-2 flex items-center justify-between">
+          <div><div class="text-sm font-medium">${b.title}</div><div class="text-xs text-gray-400">${fmtDate(b.billDate)}</div></div>
+          <div class="text-sm font-bold">¥${b.totalAmount}</div>
+        </div>
+      `).join(''):'<div class="text-xs text-gray-400">暂无账单</div>'}
+    `;
+  }catch(e){detail.innerHTML=`<div class="text-xs text-red-500">${e.message}</div>`}
+};
+
+window.showBsGroupModal=function(){
+  showModal(`<h3 class="text-sm font-bold mb-4">新建群组</h3><div class="space-y-3">
+    <input id="m-bs-name" class="input" placeholder="群组名称 *">
+    <input id="m-bs-desc" class="input" placeholder="描述">
+    <div class="flex justify-end gap-2"><button onclick="closeModal()" class="btn btn-ghost">取消</button><button onclick="bsCreateGroup()" class="btn btn-primary">创建</button></div></div>`);
+};
+
+window.bsCreateGroup=async function(){
+  const name=document.getElementById('m-bs-name').value.trim();if(!name)return;
+  try{await POST('/billsplit/groups',{name,description:document.getElementById('m-bs-desc').value});toast('创建成功');closeModal();loadBsGroups()}catch(e){toast(e.message,false)}
+};
+
+window.showBsAddFamily=function(gid){
+  showModal(`<h3 class="text-sm font-bold mb-4">添加家庭</h3><div class="space-y-3">
+    <input id="m-bs-fname" class="input" placeholder="家庭名称 *">
+    <input id="m-bs-fcolor" type="color" value="#3b82f6" class="w-10 h-10 rounded cursor-pointer">
+    <div class="flex justify-end gap-2"><button onclick="closeModal()" class="btn btn-ghost">取消</button><button onclick="bsAddFamily(${gid})" class="btn btn-primary">添加</button></div></div>`);
+};
+
+window.bsAddFamily=async function(gid){
+  const name=document.getElementById('m-bs-fname').value.trim();if(!name)return;
+  try{await POST(`/billsplit/groups/${gid}/families`,{name,color:document.getElementById('m-bs-fcolor').value});toast('添加成功');closeModal();bsOpenGroup(gid)}catch(e){toast(e.message,false)}
+};
+
+window.showBsNlpBill=function(gid){
+  showModal(`<h3 class="text-sm font-bold mb-4">🗣 自然语言创建账单</h3><div class="space-y-3">
+    <textarea id="m-bs-nlp" class="input" rows="3" placeholder="上周六张家2大1小、李家2大一起吃了海底捞，花了580块"></textarea>
+    <div class="flex justify-end gap-2"><button onclick="closeModal()" class="btn btn-ghost">取消</button><button onclick="bsNlpCreate(${gid})" class="btn btn-primary">AI 解析并创建</button></div></div>`);
+};
+
+window.bsNlpCreate=async function(gid){
+  const input=document.getElementById('m-bs-nlp').value.trim();if(!input)return;
+  try{const parsed=await POST(`/billsplit/groups/${gid}/bills/parse`,{input});
+    await POST(`/billsplit/groups/${gid}/bills/from-parsed`,parsed);
+    toast('账单已创建');closeModal();bsOpenGroup(gid);
+  }catch(e){toast(e.message,false)}
+};
+
+window.showBsAddBill=function(gid){
+  showModal(`<h3 class="text-sm font-bold mb-4">新建账单</h3><div class="space-y-3">
+    <input id="m-bs-btitle" class="input" placeholder="标题 *">
+    <input id="m-bs-bamount" type="number" class="input" placeholder="总金额 *">
+    <input id="m-bs-bdate" type="date" class="input">
+    <div class="text-xs text-gray-400">提示: 使用「🗣 语音账单」可以用自然语言自动创建</div>
+    <div class="flex justify-end gap-2"><button onclick="closeModal()" class="btn btn-ghost">取消</button><button onclick="bsCreateBill(${gid})" class="btn btn-primary">创建</button></div></div>`);
+};
+
+window.bsCreateBill=async function(gid){
+  const title=document.getElementById('m-bs-btitle').value.trim();
+  const amount=+document.getElementById('m-bs-bamount').value;
+  if(!title||!amount){toast('请填写标题和金额',false);return}
+  try{await POST(`/billsplit/groups/${gid}/bills`,{title,totalAmount:amount,billDate:document.getElementById('m-bs-bdate').value,participants:[]});
+    toast('创建成功');closeModal();bsOpenGroup(gid)}catch(e){toast(e.message,false)}
+};
+
+// ══════════════════════════════════════
+//  FoodMap
+// ══════════════════════════════════════
+initTabs('[data-ft]',t=>{
+  document.getElementById('fm-malls').classList.toggle('hidden',t!=='malls');
+  document.getElementById('fm-favorites').classList.toggle('hidden',t!=='favorites');
+  document.getElementById('fm-sync').classList.toggle('hidden',t!=='sync');
+  document.getElementById('fm-restaurant-panel').classList.add('hidden');
+  if(t==='malls')fmLoad();
+  if(t==='favorites')fmLoadFavorites();
+  if(t==='sync')fmLoadSync();
+});
+
+async function initFoodMap(){await Promise.all([fmLoadDistricts(),fmLoad(),fmLoadStats()])}
+
+async function fmLoadDistricts(){
+  try{const d=await GET('/foodmap/districts')||[];
+    const sel=document.getElementById('fm-district');
+    sel.innerHTML='<option value="">全部区域</option>'+d.map(di=>`<option value="${di}">${di}</option>`).join('');
+  }catch{}
+}
+
+async function fmLoadStats(){
+  try{const s=await GET('/foodmap/stats');
+    document.getElementById('fm-stats').innerHTML=`<span>商场: ${s.mallCount}</span><span>餐厅: ${s.restaurantCount}</span><span>收藏: ${s.favoriteCount}</span>`;
+  }catch{}
+}
+
+async function fmLoad(){
+  loading('fm-malls');
+  try{
+    const district=document.getElementById('fm-district').value;
+    let d;
+    if(district){d=await GET(`/foodmap/malls/district/${encodeURIComponent(district)}`)}
+    else{const r=await GET('/foodmap/malls?page=1&pageSize=100');d=r?.items||r||[]}
+    if(!d?.length){empty('fm-malls','暂无商场');return}
+    document.getElementById('fm-malls').innerHTML=d.map(m=>`
+      <div class="card cursor-pointer hover:border-blue-400" onclick="fmOpenMall(${m.id},'${m.name.replace(/'/g,"\\'")}')">
+        <div class="flex items-center justify-between mb-1">
+          <div class="text-sm font-medium">${m.name}</div>
+          ${m.isCore?'<span class="badge bg-yellow-100 text-yellow-700">核心</span>':''}
+        </div>
+        <div class="text-xs text-gray-400">${m.district||''} · ${m.address||''}</div>
+        <div class="flex items-center gap-3 mt-2 text-xs text-gray-400">
+          <span>🍽 ${m.restaurantCount||0}</span>
+          ${m.rating?`<span>⭐ ${m.rating}</span>`:''}
+          ${m.hasZeekrCharger?'<span>⚡</span>':''}
+          ${m.freeParking||m.chargingFreeParking?'<span>🅿️</span>':''}
+        </div>
+      </div>
+    `).join('');
+  }catch(e){document.getElementById('fm-malls').innerHTML=`<div class="text-xs text-red-500">${e.message}</div>`}
+}
+
+window.fmOpenMall=async function(id,name){
+  const panel=document.getElementById('fm-restaurant-panel');
+  panel.classList.remove('hidden');
+  panel.innerHTML=`<div class="flex items-center justify-between mb-3"><div class="section-title mb-0">${name} · 餐厅</div><button onclick="this.parentElement.parentElement.classList.add('hidden')" class="btn btn-ghost text-xs">← 返回</button></div><div class="flex justify-center py-4"><div class="spinner"></div></div>`;
+  try{const d=await GET(`/foodmap/malls/${id}/restaurants?pageSize=50`);
+    const list=d?.restaurants||[];
+    panel.innerHTML=`<div class="flex items-center justify-between mb-3"><div class="section-title mb-0">${name} · 餐厅 (${d?.totalCount||list.length})</div><button onclick="this.parentElement.parentElement.classList.add('hidden')" class="btn btn-ghost text-xs">← 返回</button></div>`+
+    (list.length?`<div class="grid grid-cols-1 md:grid-cols-2 gap-2">${list.map(r=>`
+      <div class="card flex items-center justify-between">
+        <div>
+          <div class="text-sm font-medium">${r.name}</div>
+          <div class="text-xs text-gray-400">${r.category||''} · ${r.floor||''}</div>
+        </div>
+        <div class="text-right shrink-0">
+          <div class="text-sm font-bold">¥${r.avgPrice||'—'}</div>
+          ${r.rating?`<div class="text-xs text-yellow-500">⭐ ${r.rating}</div>`:''}
+        </div>
+      </div>
+    `).join('')}</div>`:'<div class="text-xs text-gray-400">暂无餐厅数据</div>');
+  }catch(e){panel.innerHTML+=`<div class="text-xs text-red-500">${e.message}</div>`}
+};
+
+async function fmLoadFavorites(){
+  loading('fm-favorites');
+  try{const d=await GET('/foodmap/favorites')||[];
+    if(!d.length){document.getElementById('fm-favorites').innerHTML='<div class="empty-state">暂无收藏</div>';return}
+    document.getElementById('fm-favorites').innerHTML=d.map(f=>`
+      <div class="card mb-2 flex items-center justify-between">
+        <div><div class="text-sm font-medium">${f.restaurant?.name||''}</div><div class="text-xs text-gray-400">${f.restaurant?.category||''} · ¥${f.restaurant?.avgPrice||'—'} ${f.note?`· ${f.note}`:''}</div></div>
+        <div class="flex items-center gap-2">
+          ${f.userRating?`<span class="text-yellow-500 text-xs">${'⭐'.repeat(f.userRating)}</span>`:''}
+          <button onclick="fmDelFav(${f.id})" class="text-gray-300 hover:text-red-500">🗑</button>
+        </div>
+      </div>
+    `).join('');
+  }catch(e){toast(e.message,false)}
+}
+
+window.fmDelFav=async function(id){try{await DEL(`/foodmap/favorites/${id}`);toast('已取消收藏');fmLoadFavorites();fmLoadStats()}catch(e){toast(e.message,false)}};
+
+async function fmLoadSync(){
+  const el=document.getElementById('fm-sync');
+  el.innerHTML=`
+    <div class="card mb-4">
+      <div class="section-title">同步操作</div>
+      <div class="flex flex-wrap gap-2">
+        <button onclick="fmSyncAction('test-key')" class="btn btn-ghost text-xs">测试 Key</button>
+        <button onclick="fmSyncAction('test-mall')" class="btn btn-ghost text-xs">测试同步</button>
+        <button onclick="fmSyncAction('auto')" class="btn btn-primary text-xs">自动同步</button>
+        <button onclick="fmSyncAction('incremental')" class="btn btn-ghost text-xs">增量同步</button>
+        <button onclick="fmSyncAction('core')" class="btn btn-ghost text-xs">核心同步</button>
+      </div>
+    </div>
+    <div class="section-title">同步任务历史</div>
+    <div id="fm-sync-tasks"></div>
+  `;
+  try{const d=await GET('/foodmap/sync/tasks')||[];
+    document.getElementById('fm-sync-tasks').innerHTML=d.length?d.map(t=>`
+      <div class="card mb-2 flex items-center justify-between">
+        <div><div class="text-sm font-medium">${t.taskType} ${t.targetName?`· ${t.targetName}`:''}</div><div class="text-xs text-gray-400">${fmtDateTime(t.startedAt)} → ${t.finishedAt?fmtDateTime(t.finishedAt):'进行中'}</div></div>
+        <div class="text-right"><span class="badge ${t.status==='completed'?'bg-green-100 text-green-700':'bg-yellow-100 text-yellow-700'}">${t.status}</span><div class="text-xs text-gray-400 mt-1">${t.syncedItems}/${t.totalItems}</div></div>
+      </div>
+    `).join(''):'<div class="text-xs text-gray-400">暂无任务</div>';
+  }catch{}
+}
+
+window.fmSyncAction=async function(action){
+  try{const d=await POST(`/foodmap/sync/${action}`);toast(`${action}: ${d?.status||d?.ok?'成功':'已启动'}`);if(action!=='test-key')setTimeout(fmLoadSync,2000)}catch(e){toast(e.message,false)}
+};
+
+// ══════════════════════════════════════
+//  Settings
+// ══════════════════════════════════════
+async function initSettings(){
+  // App config
+  document.getElementById('cfg-app').innerHTML=`
+    <div><label class="text-xs text-gray-400">Base URL</label><select id="s-url" class="input" onchange="document.getElementById('cfg-url').value=this.value;localStorage.setItem('ls-url',this.value)"><option value="https://life-style-wgsx.onrender.com/api/v1">Production</option><option value="http://localhost:8080/api/v1">Local</option></select></div>
+    <div><label class="text-xs text-gray-400">Bearer Token</label><input id="s-token" type="password" class="input" value="${apiToken()}" oninput="document.getElementById('cfg-token').value=this.value;localStorage.setItem('ls-token',this.value)"></div>
+  `;
+  document.getElementById('s-url').value=apiUrl();
+
+  // Load remote config
+  try{
+    const c=await GET('/config');
+    document.getElementById('cfg-claude').innerHTML=`
+      <div><label class="text-xs text-gray-400">API Key</label><div class="text-sm font-mono">${c.claudeApiKey||'未配置'}</div></div>
+      <div><label class="text-xs text-gray-400">Model</label><div class="text-sm">${c.claudeModel||'默认'}</div></div>
+      <div><label class="text-xs text-gray-400">Base URL</label><div class="text-sm">${c.claudeBaseUrl||'默认'}</div></div>
+    `;
+    document.getElementById('cfg-embedding').innerHTML=`
+      <div><label class="text-xs text-gray-400">Provider</label><div class="text-sm">${c.embeddingProvider||'未配置'}</div></div>
+      <div><label class="text-xs text-gray-400">Model</label><div class="text-sm">${c.embeddingModel||'—'}</div></div>
+    `;
+  }catch(e){
+    document.getElementById('cfg-claude').innerHTML=`<div class="text-xs text-red-500">${e.message}</div>`;
+    document.getElementById('cfg-embedding').innerHTML='';
+  }
+
+  // LLM
+  try{
+    const l=await GET('/llm/status');
+    document.getElementById('cfg-llm').innerHTML=`
+      <div class="space-y-3">
+        <div class="flex items-center justify-between">
+          <div><div class="text-sm font-medium">主模型: ${l.primary?.name||'—'}</div><div class="text-xs text-gray-400">${l.primary?.model||''} · ${l.primary?.configured?'已配置':'未配置'}</div></div>
+          <button onclick="llmProbe()" class="btn btn-ghost text-xs">探测</button>
+        </div>
+        <div class="text-xs">熔断器: <span class="${l.circuitBreaker?.state==='closed'?'text-green-500':'text-red-500'}">${l.circuitBreaker?.state||'—'}</span> · 失败次数: ${l.circuitBreaker?.failCount||0}</div>
+        ${l.fallbacks?.length?`<div class="section-title text-xs mt-2">Fallback Providers</div>`+l.fallbacks.map(f=>`<div class="flex items-center justify-between py-1 border-t border-gray-100 dark:border-gray-800"><div class="text-xs"><span class="font-medium">${f.name}</span> · ${f.model}</div><button onclick="llmProbeOne('${f.name}')" class="text-xs text-blue-500 hover:underline">探测</button></div>`).join(''):''}
+      </div>
+    `;
+  }catch(e){document.getElementById('cfg-llm').innerHTML=`<div class="text-xs text-red-500">${e.message}</div>`}
+}
+
+window.llmProbe=async function(){try{const d=await POST('/llm/probe');toast(`探测${d?.ok?'成功':'失败'} · ${d?.latency_ms||0}ms`)}catch(e){toast(e.message,false)}};
+window.llmProbeOne=async function(name){try{const d=await POST(`/llm/probe/${name}`);toast(`${name}: ${d?.ok?'成功':'失败'} · ${d?.latency_ms||0}ms`)}catch(e){toast(e.message,false)}};
+
+// ══════════════════════════════════════
+//  Boot
+// ══════════════════════════════════════
+function boot(){
+  document.getElementById('auth-gate').classList.add('hidden');
+  document.getElementById('main-app').classList.remove('hidden');
+  // Restore settings
+  const u=localStorage.getItem('ls-url');if(u)document.getElementById('cfg-url').value=u;
+  const t=localStorage.getItem('ls-token');if(t)document.getElementById('cfg-token').value=t;
+  document.getElementById('cfg-url').addEventListener('change',e=>localStorage.setItem('ls-url',e.target.value));
+  document.getElementById('cfg-token').addEventListener('input',e=>localStorage.setItem('ls-token',e.target.value));
+  navigate('dashboard');
+}
+</script>
 </body>
 </html>
