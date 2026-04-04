@@ -424,7 +424,7 @@ async function initDashboard(){
       GET('/todos/pending'),GET('/knowledge/stats'),GET('/wardrobe/stats'),GET('/foodmap/stats')
     ]);
     const pending=todos.status==='fulfilled'?(todos.value?.length??0):'—';
-    const kTotal=kStats.status==='fulfilled'?(kStats.value?.total??0):'—';
+    const kTotal=kStats.status==='fulfilled'?(kStats.value?.knowledgeCount??kStats.value?.total??0):'—';
     const wdCount=wdStats.status==='fulfilled'?(wdStats.value?.clothingCount??0):'—';
     const fmCount=fmStats.status==='fulfilled'?(fmStats.value?.mallCount??0):'—';
     el.innerHTML=[
@@ -596,7 +596,7 @@ async function loadKnowledge(){
 
 async function loadKStats(){
   try{const s=await GET('/knowledge/stats');
-    document.getElementById('k-stats').innerHTML=`<span>条目: ${s.total}</span><span>Embedding: ${s.withEmbedding}</span><span>标签: ${s.tagCount}</span><span>实体: ${s.entityCount}</span>`;
+    document.getElementById('k-stats').innerHTML=`<span>条目: ${s.knowledgeCount??s.total??0}</span><span>向量: ${s.vectorCount??s.withEmbedding??0}</span><span>会话: ${s.sessionCount??0}</span><span>实体: ${s.entityCount??0}</span>`;
   }catch{}
 }
 
