@@ -357,9 +357,8 @@
           <div class="card">
             <div class="section-title">📰 News 服务配置</div>
             <div class="space-y-3">
-              <div><label class="text-xs text-gray-400">RSS Service URL</label><input id="s-rss-url" class="input" placeholder="http://14.103.24.172:31020" oninput="localStorage.setItem('ls-rss-url',this.value)"></div>
-              <div><label class="text-xs text-gray-400">RSS Token</label><input id="s-rss-token" type="password" class="input" placeholder="Auth token" oninput="localStorage.setItem('ls-rss-token',this.value)"></div>
-              <div><label class="text-xs text-gray-400">Morning-Brief URL</label><input id="s-brief-url" class="input" placeholder="http://14.103.24.172:32197" oninput="localStorage.setItem('ls-brief-url',this.value)"></div>
+              <div><label class="text-xs text-gray-400">News Service URL</label><input id="s-news-url" class="input" placeholder="https://xxx.trycloudflare.com" oninput="localStorage.setItem('ls-news-url',this.value)"></div>
+              <div><label class="text-xs text-gray-400">RSS Token</label><input id="s-news-token" type="password" class="input" placeholder="Auth token (for /api/articles)" oninput="localStorage.setItem('ls-news-token',this.value)"></div>
               <div><label class="text-xs text-gray-400">Auto-Refresh Interval</label><select id="s-news-refresh" class="input" onchange="localStorage.setItem('ls-news-refresh',this.value);setupNewsRefresh()"><option value="0">Off</option><option value="60000">1 min</option><option value="300000" selected>5 min</option><option value="900000">15 min</option></select></div>
               <div class="flex gap-2">
                 <button onclick="testNewsConn()" class="btn btn-ghost text-xs">测试连接</button>
@@ -1205,13 +1204,12 @@ window.fmSyncAction=async function(action){
 // ══════════════════════════════════════
 //  News — RSS & Morning-Brief API clients
 // ══════════════════════════════════════
-function rssUrl(){return localStorage.getItem('ls-rss-url')||''}
-function rssToken(){return localStorage.getItem('ls-rss-token')||''}
-function briefUrl(){return localStorage.getItem('ls-brief-url')||''}
+function newsUrl(){return localStorage.getItem('ls-news-url')||''}
+function newsToken(){return localStorage.getItem('ls-news-token')||''}
 
 async function rssApi(path,params={}){
-  const base=rssUrl();if(!base)throw new Error('RSS URL 未配置，请在 Settings 中设置');
-  if(rssToken())params.token=rssToken();
+  const base=newsUrl();if(!base)throw new Error('News URL 未配置，请在 Settings 中设置');
+  if(newsToken())params.token=newsToken();
   const url=new URL(path,base);
   Object.entries(params).forEach(([k,v])=>{if(v!==''&&v!=null)url.searchParams.set(k,v)});
   const r=await fetch(url.toString());
@@ -1220,7 +1218,7 @@ async function rssApi(path,params={}){
 }
 
 async function briefApi(method,path,body,params={}){
-  const base=briefUrl();if(!base)throw new Error('Brief URL 未配置，请在 Settings 中设置');
+  const base=newsUrl();if(!base)throw new Error('News URL 未配置，请在 Settings 中设置');
   const url=new URL(path,base);
   Object.entries(params).forEach(([k,v])=>{if(v!==''&&v!=null)url.searchParams.set(k,v)});
   const opts={method};
@@ -1473,7 +1471,7 @@ window.nLoadMetrics=async function(){
 function setupNewsRefresh(){
   if(nRefreshTimer)clearInterval(nRefreshTimer);
   const interval=parseInt(localStorage.getItem('ls-news-refresh'))||0;
-  if(interval<=0||!rssUrl())return;
+  if(interval<=0||!newsUrl())return;
   nRefreshTimer=setInterval(async()=>{
     try{
       const d=await rssApi('/api/articles',{offset:0,limit:5});
@@ -1499,25 +1497,21 @@ function setupNewsRefresh(){
 window.testNewsConn=async function(){
   const el=document.getElementById('news-conn-status');
   el.textContent='Testing...';el.className='text-xs self-center text-gray-400';
-  const results=[];
-  if(rssUrl()){
-    try{const r=await fetch(rssUrl()+'/health');const d=await r.json();results.push(d.status==='ok'?'RSS:OK':'RSS:Error')}
-    catch(e){results.push('RSS:'+((e.message||'').includes('fetch')?'CORS/Network':'Failed'))}
+  if(!newsUrl()){el.textContent='未配置 URL';el.className='text-xs self-center text-red-500';return}
+  try{
+    const r=await fetch(newsUrl()+'/health');const d=await r.json();
+    el.textContent=d.status==='ok'?`OK · feeds:${d.feed_count||0}`:'Unhealthy';
+    el.className=`text-xs self-center ${d.status==='ok'?'text-green-500':'text-red-500'}`;
+  }catch(e){
+    el.textContent=(e.message||'').includes('fetch')?'CORS/Network error':'Failed: '+e.message;
+    el.className='text-xs self-center text-red-500';
   }
-  if(briefUrl()){
-    try{const r=await fetch(briefUrl()+'/health');const d=await r.json();results.push(d.status==='ok'?'Brief:OK':'Brief:Error')}
-    catch(e){results.push('Brief:'+((e.message||'').includes('fetch')?'CORS/Network':'Failed'))}
-  }
-  if(!results.length)results.push('未配置 URL');
-  const ok=results.every(r=>r.includes('OK'));
-  el.textContent=results.join(' · ');
-  el.className=`text-xs self-center ${ok?'text-green-500':'text-red-500'}`;
 };
 
 // -- Feishu --
 window.feishuAuth=function(){
-  if(!briefUrl()){toast('请先配置 Brief URL',false);return}
-  window.open(briefUrl()+'/api/v1/feishu/authorize','_blank');
+  if(!newsUrl()){toast('请先配置 Brief URL',false);return}
+  window.open(newsUrl()+'/api/v1/feishu/authorize','_blank');
 };
 window.feishuDebug=async function(){
   const el=document.getElementById('feishu-debug-result');
@@ -1615,9 +1609,8 @@ async function initSettings(){
   document.getElementById('s-url').value=apiUrl();
 
   // News service config
-  document.getElementById('s-rss-url').value=rssUrl();
-  document.getElementById('s-rss-token').value=rssToken();
-  document.getElementById('s-brief-url').value=briefUrl();
+  document.getElementById('s-news-url').value=newsUrl();
+  document.getElementById('s-news-token').value=newsToken();
   document.getElementById('s-news-refresh').value=localStorage.getItem('ls-news-refresh')||'300000';
 
   // Load remote config
