@@ -319,7 +319,6 @@ window.tryAuth=async function(){
   else{document.getElementById('auth-err').classList.remove('hidden');document.getElementById('auth-pw').value='';document.getElementById('auth-pw').focus()}
 };
 document.getElementById('auth-pw').addEventListener('keydown',e=>{if(e.key==='Enter')tryAuth()});
-if(sessionStorage.getItem('ls-auth')==='ok')boot();
 
 // ══════════════════════════════════════
 //  API Client
@@ -1156,6 +1155,9 @@ function boot(){
   document.getElementById('cfg-token').addEventListener('change',()=>{clearTimeout(tokenTimer);tokenTimer=setTimeout(()=>{if(currentView==='dashboard')initDashboard()},300)});
   navigate('dashboard');
 }
+
+// Boot check — must be after all let/const declarations
+if(sessionStorage.getItem('ls-auth')==='ok')boot();
 </script>
 </body>
 </html>
