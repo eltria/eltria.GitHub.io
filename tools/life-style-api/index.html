@@ -194,7 +194,10 @@
         </div>
         <div id="weather-cards" class="flex gap-3 overflow-x-auto pb-2 mb-6"></div>
         <!-- Outfit -->
-        <div class="section-title">穿搭推荐</div>
+        <div class="flex items-center justify-between mb-3">
+          <div class="section-title mb-0">穿搭推荐</div>
+          <button onclick="outfitRecommend()" class="btn btn-primary text-xs">获取推荐</button>
+        </div>
         <div id="outfit-cards" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6"></div>
         <!-- Gears -->
         <div class="flex items-center justify-between mb-3">
@@ -699,16 +702,28 @@ window.weatherRefresh=async function(){try{await POST('/layeros/weather/refresh'
 async function loadOutfit(){
   loading('outfit-cards');
   try{const d=await GET('/layeros/outfit/cache')||[];
-    if(!d.length){document.getElementById('outfit-cards').innerHTML='<div class="text-xs text-gray-400">暂无穿搭推荐，请先刷新天气</div>';return}
-    document.getElementById('outfit-cards').innerHTML=d.map(o=>`
-      <div class="card">
-        <div class="text-xs text-gray-400 mb-1">${o.date||''} · ${o.tempRange||''}</div>
-        <div class="space-y-1 mb-2">${(o.layers||[]).map(l=>`<div class="text-sm">👕 ${l}</div>`).join('')}</div>
-        <div class="text-xs text-gray-400">${o.explanation||''}</div>
-      </div>
-    `).join('');
+    if(!d.length){document.getElementById('outfit-cards').innerHTML='<div class="text-xs text-gray-400">暂无缓存，点击「获取推荐」生成穿搭建议</div>';return}
+    renderOutfit(d);
   }catch(e){document.getElementById('outfit-cards').innerHTML=`<div class="text-xs text-red-500">${e.message}</div>`}
 }
+
+function renderOutfit(d){
+  document.getElementById('outfit-cards').innerHTML=d.map(o=>`
+    <div class="card">
+      <div class="text-xs text-gray-400 mb-1">${o.date||''} · ${o.tempRange||''}</div>
+      <div class="space-y-1 mb-2">${(o.layers||[]).map(l=>`<div class="text-sm">👕 ${l}</div>`).join('')}</div>
+      <div class="text-xs text-gray-400">${o.explanation||''}</div>
+    </div>
+  `).join('');
+}
+
+window.outfitRecommend=async function(){
+  loading('outfit-cards');
+  try{const d=await GET('/layeros/outfit/recommendation')||[];
+    if(!d.length){document.getElementById('outfit-cards').innerHTML='<div class="text-xs text-gray-400">无法生成推荐，请确认已有天气数据和服装</div>';return}
+    renderOutfit(d);toast('穿搭推荐已生成');
+  }catch(e){document.getElementById('outfit-cards').innerHTML=`<div class="text-xs text-red-500">${e.message}</div>`;toast(e.message,false)}
+};
 
 async function loadGears(){
   loading('gear-list');
