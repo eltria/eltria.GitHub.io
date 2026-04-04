@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>News Morning Brief — System Architecture</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #FAFAF8;
+  --bg2: #F2F1ED;
+  --bg3: #EAEAE6;
+  --text: #1A1A18;
+  --text2: #5A5A56;
+  --text3: #8A8A84;
+  --border: rgba(0,0,0,.08);
+  --border2: rgba(0,0,0,.12);
+  --purple: #534AB7;
+  --purple-bg: #EEEDFE;
+  --purple-light: #AFA9EC;
+  --purple-dark: #3C3489;
+  --teal: #0F6E56;
+  --teal-bg: #E1F5EE;
+  --teal-light: #5DCAA5;
+  --teal-dark: #085041;
+  --coral: #D85A30;
+  --coral-bg: #FAECE7;
+  --coral-light: #F0997B;
+  --coral-dark: #712B13;
+  --blue: #185FA5;
+  --blue-bg: #E6F1FB;
+  --amber: #BA7517;
+  --amber-bg: #FAEEDA;
+  --green: #639922;
+  --green-bg: #EAF3DE;
+  --font: 'DM Sans', 'Noto Sans SC', system-ui, sans-serif;
+  --mono: 'JetBrains Mono', monospace;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --shadow: 0 1px 3px rgba(0,0,0,.04), 0 4px 12px rgba(0,0,0,.03);
+  --shadow-lg: 0 4px 24px rgba(0,0,0,.06), 0 1px 4px rgba(0,0,0,.04);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #141413; --bg2: #1E1E1C; --bg3: #2A2A27;
+    --text: #E8E8E4; --text2: #A0A09A; --text3: #6A6A64;
+    --border: rgba(255,255,255,.08); --border2: rgba(255,255,255,.12);
+    --purple-bg: #1E1A3A; --purple-light: #7F77DD;
+    --teal-bg: #0A2A22; --teal-light: #1D9E75;
+    --coral-bg: #2A1510; --coral-light: #D85A30;
+    --blue-bg: #0C1E33; --amber-bg: #2A1E0A;
+    --green-bg: #1A2A0A;
+    --shadow: 0 1px 3px rgba(0,0,0,.2), 0 4px 12px rgba(0,0,0,.15);
+    --shadow-lg: 0 4px 24px rgba(0,0,0,.3), 0 1px 4px rgba(0,0,0,.2);
+  }
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth;font-size:16px}
+body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:1.65;-webkit-font-smoothing:antialiased}
+
+.nav{position:fixed;top:0;left:0;right:0;z-index:100;background:color-mix(in srgb,var(--bg) 85%,transparent);backdrop-filter:blur(20px) saturate(1.4);-webkit-backdrop-filter:blur(20px) saturate(1.4);border-bottom:1px solid var(--border)}
+.nav-inner{max-width:1100px;margin:0 auto;padding:0 32px;display:flex;align-items:center;height:56px;gap:32px}
+.nav-logo{font-weight:600;font-size:15px;color:var(--text);display:flex;align-items:center;gap:8px;text-decoration:none;flex-shrink:0}
+.nav-logo .dot{width:8px;height:8px;border-radius:50%;background:var(--purple)}
+.nav-links{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none}
+.nav-links::-webkit-scrollbar{display:none}
+.nav-links a{font-size:13px;color:var(--text3);text-decoration:none;padding:6px 12px;border-radius:6px;white-space:nowrap;transition:all .2s}
+.nav-links a:hover,.nav-links a.active{color:var(--text);background:var(--bg2)}
+
+.hero{max-width:1100px;margin:0 auto;padding:120px 32px 64px;display:flex;flex-direction:column;align-items:center;text-align:center}
+.hero-badge{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:500;color:var(--purple);background:var(--purple-bg);padding:5px 14px;border-radius:20px;margin-bottom:24px;border:1px solid color-mix(in srgb,var(--purple) 20%,transparent)}
+.hero-badge .pulse-dot{width:6px;height:6px;border-radius:50%;background:var(--purple);animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:.5;transform:scale(.8)}50%{opacity:1;transform:scale(1.2)}}
+.hero h1{font-size:clamp(32px,5vw,52px);font-weight:600;line-height:1.15;letter-spacing:-.02em;margin-bottom:16px;background:linear-gradient(135deg,var(--text) 0%,var(--text2) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero p{font-size:17px;color:var(--text2);max-width:560px;line-height:1.7;font-weight:300}
+
+.overview{max-width:1100px;margin:0 auto;padding:0 32px 80px}
+.flow-diagram{background:var(--bg2);border-radius:16px;padding:40px 32px;border:1px solid var(--border);position:relative;overflow:hidden}
+.flow-diagram::before{content:'';position:absolute;top:-100px;right:-100px;width:300px;height:300px;border-radius:50%;background:radial-gradient(circle,color-mix(in srgb,var(--purple) 6%,transparent),transparent 70%);pointer-events:none}
+.flow-nodes{display:grid;grid-template-columns:1fr auto 1fr auto 1fr;align-items:center;gap:0;position:relative}
+.flow-node{background:var(--bg);border-radius:var(--radius);padding:24px 20px;border:1px solid var(--border2);transition:all .3s;position:relative}
+.flow-node:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg)}
+.flow-node-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:16px;margin-bottom:12px}
+.flow-node h3{font-size:15px;font-weight:600;margin-bottom:4px}
+.flow-node p{font-size:12px;color:var(--text3);line-height:1.5}
+.flow-connector{display:flex;flex-direction:column;align-items:center;gap:4px;padding:0 8px}
+.flow-connector svg{width:32px;height:24px}
+.flow-connector span{font-size:10px;color:var(--text3);white-space:nowrap;font-family:var(--mono)}
+
+.section{max-width:1100px;margin:0 auto;padding:0 32px}
+.section+.section{margin-top:80px}
+.section-header{display:flex;align-items:center;gap:14px;margin-bottom:32px;padding-bottom:16px;border-bottom:1px solid var(--border)}
+.section-num{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;flex-shrink:0}
+.section-header h2{font-size:22px;font-weight:600;letter-spacing:-.01em}
+.section-header .tag{font-size:11px;font-family:var(--mono);padding:3px 10px;border-radius:6px;background:var(--bg2);color:var(--text3)}
+
+.card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+.card{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:24px;transition:all .3s}
+.card:hover{border-color:var(--border2);box-shadow:var(--shadow)}
+.card-title{font-size:14px;font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.card-title .icon{width:24px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0}
+.card-desc{font-size:13px;color:var(--text2);line-height:1.6}
+
+.pipeline{display:flex;flex-direction:column;gap:2px;margin-top:20px}
+.pipeline-stage{display:flex;align-items:stretch;gap:0;opacity:0;animation:fadeUp .5s ease forwards}
+.pipeline-stage:nth-child(1){animation-delay:.1s}
+.pipeline-stage:nth-child(2){animation-delay:.2s}
+.pipeline-stage:nth-child(3){animation-delay:.3s}
+.pipeline-stage:nth-child(4){animation-delay:.4s}
+.pipeline-stage:nth-child(5){animation-delay:.5s}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.stage-num{width:48px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;font-family:var(--mono);flex-shrink:0;border-radius:var(--radius-sm) 0 0 var(--radius-sm)}
+.stage-body{flex:1;padding:14px 18px;background:var(--bg);border:1px solid var(--border);border-left:none}
+.stage-body h4{font-size:13px;font-weight:600;margin-bottom:3px}
+.stage-body p{font-size:12px;color:var(--text3)}
+.stage-output{width:200px;padding:14px 16px;background:var(--bg2);border:1px solid var(--border);border-left:none;border-radius:0 var(--radius-sm) var(--radius-sm) 0;display:flex;flex-direction:column;justify-content:center}
+.stage-output code{font-family:var(--mono);font-size:11px;color:var(--text3);display:block;line-height:1.5}
+
+.score-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:20px}
+.score-phase{border-radius:var(--radius);border:1px solid var(--border);overflow:hidden}
+.score-phase-head{padding:14px 18px;font-size:13px;font-weight:600;border-bottom:1px solid var(--border)}
+.score-row{display:flex;align-items:center;justify-content:space-between;padding:10px 18px;font-size:13px;border-bottom:1px solid var(--border)}
+.score-row:last-child{border-bottom:none}
+.score-row .dim{color:var(--text2)}
+.score-row .weight{font-family:var(--mono);font-size:12px;padding:2px 8px;border-radius:4px;background:var(--bg2);color:var(--text3)}
+.score-bar{width:60px;height:4px;border-radius:2px;background:var(--bg3);margin-left:8px;overflow:hidden}
+.score-bar-fill{height:100%;border-radius:2px;transition:width .6s ease}
+
+.dataflow{background:var(--bg2);border-radius:var(--radius);padding:32px;border:1px solid var(--border);margin-top:20px;overflow-x:auto}
+.dataflow-table{width:100%;border-collapse:collapse;font-size:13px}
+.dataflow-table th{text-align:left;padding:10px 14px;font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);border-bottom:2px solid var(--border2)}
+.dataflow-table td{padding:10px 14px;border-bottom:1px solid var(--border);vertical-align:top}
+.dataflow-table code{font-family:var(--mono);font-size:12px;background:var(--bg);padding:2px 6px;border-radius:4px;color:var(--text2)}
+.dataflow-table .arrow{color:var(--text3);font-size:16px;text-align:center}
+
+.deploy-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+.deploy-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;transition:all .3s}
+.deploy-card:hover{box-shadow:var(--shadow)}
+.deploy-card-head{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.deploy-card-head .ns{font-size:11px;font-family:var(--mono);padding:2px 8px;border-radius:4px;background:var(--bg2);color:var(--text3)}
+.deploy-card-head h4{font-size:14px;font-weight:600}
+.deploy-card-body{padding:16px 20px}
+.deploy-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;font-size:13px;color:var(--text2)}
+.deploy-row span:last-child{font-family:var(--mono);font-size:12px;color:var(--text3)}
+
+.env-section{margin-top:20px}
+.env-group{border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:12px}
+.env-group-head{padding:12px 18px;font-size:13px;font-weight:600;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;transition:background .2s}
+.env-group-head:hover{background:var(--bg3)}
+.env-group-head .chevron{margin-left:auto;transition:transform .3s;font-size:12px;color:var(--text3)}
+.env-group-head.open .chevron{transform:rotate(180deg)}
+.env-group-body{display:none}
+.env-group-body.open{display:block}
+.env-row{display:flex;align-items:baseline;padding:8px 18px;font-size:13px;border-bottom:1px solid var(--border)}
+.env-row:last-child{border-bottom:none}
+.env-row .key{font-family:var(--mono);font-size:12px;color:var(--purple);min-width:220px;flex-shrink:0}
+.env-row .val{color:var(--text2)}
+
+.decision-list{display:flex;flex-direction:column;gap:8px;margin-top:20px}
+.decision-item{display:flex;gap:16px;padding:16px 20px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);transition:all .2s}
+.decision-item:hover{border-color:var(--border2)}
+.decision-item .decision{font-size:14px;font-weight:500;min-width:200px;flex-shrink:0}
+.decision-item .reason{font-size:13px;color:var(--text2);line-height:1.6}
+
+.footer{max-width:1100px;margin:80px auto 0;padding:32px;border-top:1px solid var(--border);text-align:center;font-size:12px;color:var(--text3);padding-bottom:48px}
+.pill{display:inline-flex;align-items:center;font-size:11px;padding:3px 10px;border-radius:20px;font-family:var(--mono);gap:4px;margin:2px}
+.mt{margin-top:20px}.mb{margin-bottom:20px}
+.full-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:28px;margin-top:20px}
+
+@media(max-width:768px){
+  .nav-inner{padding:0 16px}
+  .hero,.section,.overview{padding-left:16px;padding-right:16px}
+  .flow-nodes{grid-template-columns:1fr;gap:12px}
+  .flow-connector{transform:rotate(90deg);padding:8px 0}
+  .score-grid{grid-template-columns:1fr}
+  .stage-output{width:140px}
+  .decision-item{flex-direction:column;gap:4px}
+  .decision-item .decision{min-width:unset}
+  .env-row{flex-direction:column;gap:2px}
+  .env-row .key{min-width:unset}
+}
+.reveal{opacity:0;transform:translateY(20px);transition:all .6s cubic-bezier(.22,1,.36,1)}
+.reveal.visible{opacity:1;transform:none}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a class="nav-logo" href="/" style="margin-right:4px"><span class="dot"></span>Eltria</a>
+    <span style="color:var(--border2);font-size:18px;font-weight:200">|</span>
+    <span style="font-size:13px;color:var(--text2);font-weight:500;white-space:nowrap">System Architecture</span>
+    <div class="nav-links">
+      <a href="#overview">Overview</a>
+      <a href="#news">News</a>
+      <a href="#rss">RSS</a>
+      <a href="#morning-brief">Morning Brief</a>
+      <a href="#dataflow">Data Flow</a>
+      <a href="#deploy">Deployment</a>
+      <a href="#decisions">Decisions</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero" id="top">
+  <div class="hero-badge"><span class="pulse-dot"></span>Production System</div>
+  <h1>News Morning Brief</h1>
+  <p>三个独立 Go 微服务组成的新闻早报系统，覆盖 107+ 新闻源的采集、NLP 处理、评分推送全链路</p>
+</header>
+
+<div class="overview" id="overview">
+  <div class="flow-diagram reveal">
+    <div class="flow-nodes">
+      <div class="flow-node" style="border-left:3px solid var(--purple)">
+        <div class="flow-node-icon" style="background:var(--purple-bg);color:var(--purple)">N</div>
+        <h3>News 系统</h3>
+        <p>107+ 源采集<br>5 阶段 NLP 流水线<br>Claude AI 驱动</p>
+        <div class="mt" style="display:flex;flex-wrap:wrap;gap:4px">
+          <span class="pill" style="background:var(--purple-bg);color:var(--purple-dark)">Go 1.26</span>
+          <span class="pill" style="background:var(--purple-bg);color:var(--purple-dark)">Gin</span>
+          <span class="pill" style="background:var(--purple-bg);color:var(--purple-dark)">GORM</span>
+        </div>
+      </div>
+      <div class="flow-connector">
+        <svg viewBox="0 0 32 24" fill="none"><path d="M4 12h20M20 6l6 6-6 6" stroke="var(--text3)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>PostgreSQL</span>
+      </div>
+      <div class="flow-node" style="border-left:3px solid var(--teal)">
+        <div class="flow-node-icon" style="background:var(--teal-bg);color:var(--teal)">R</div>
+        <h3>RSS 服务器</h3>
+        <p>内存缓存 + Feed 渲染<br>Fever API 协议<br>&lt;5ms 响应</p>
+        <div class="mt" style="display:flex;flex-wrap:wrap;gap:4px">
+          <span class="pill" style="background:var(--teal-bg);color:var(--teal-dark)">Gin</span>
+          <span class="pill" style="background:var(--teal-bg);color:var(--teal-dark)">In-Memory</span>
+        </div>
+      </div>
+      <div class="flow-connector">
+        <svg viewBox="0 0 32 24" fill="none"><path d="M4 12h20M20 6l6 6-6 6" stroke="var(--text3)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>Fever API</span>
+      </div>
+      <div class="flow-node" style="border-left:3px solid var(--coral)">
+        <div class="flow-node-icon" style="background:var(--coral-bg);color:var(--coral)">M</div>
+        <h3>Morning Brief</h3>
+        <p>两阶段评分<br>实时推送 + 每日早报<br>Server酱 / WxPusher</p>
+        <div class="mt" style="display:flex;flex-wrap:wrap;gap:4px">
+          <span class="pill" style="background:var(--coral-bg);color:var(--coral-dark)">Chi</span>
+          <span class="pill" style="background:var(--coral-bg);color:var(--coral-dark)">Valkey</span>
+          <span class="pill" style="background:var(--coral-bg);color:var(--coral-dark)">GLM</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- NEWS -->
+<div class="section reveal" id="news">
+  <div class="section-header">
+    <div class="section-num" style="background:var(--purple-bg);color:var(--purple)">01</div>
+    <h2>News 系统</h2>
+    <span class="tag">eltria/news</span>
+  </div>
+  <div class="card-grid mb">
+    <div class="card">
+      <div class="card-title"><span class="icon" style="background:var(--purple-bg);color:var(--purple)">S</span>采集器 Scraper</div>
+      <div class="card-desc">三种采集模式：RSS/Atom (gofeed)、Web 网页 (goquery CSS)、API JSON。自适应最小堆调度器，基于 yield_rate / hit_rate 动态计算抓取间隔 (5min~6h)，域名级限流 2s/req。</div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="icon" style="background:var(--purple-bg);color:var(--purple)">L</span>LLM 容错</div>
+      <div class="card-desc">多后端熔断架构：Claude (主) → 豆包/OpenAI兼容 (备) → 规则引擎 (兜底)。熔断阈值 5 次失败，冷却 5 分钟自动恢复。</div>
+    </div>
+  </div>
+  <h3 style="font-size:15px;font-weight:600;margin-bottom:14px">5 阶段 NLP 流水线</h3>
+  <div class="pipeline">
+    <div class="pipeline-stage">
+      <div class="stage-num" style="background:var(--purple-bg);color:var(--purple)">01</div>
+      <div class="stage-body"><h4>Dedup 去重</h4><p>URL SHA256 Hash 去重，跳过已存在文章</p></div>
+      <div class="stage-output"><code>duplicate_of_id</code></div>
+    </div>
+    <div class="pipeline-stage">
+      <div class="stage-num" style="background:var(--purple-bg);color:var(--purple)">02</div>
+      <div class="stage-body"><h4>Normalize 标准化</h4><p>HTML → Markdown 转换，保留结构化内容</p></div>
+      <div class="stage-output"><code>content_markdown</code></div>
+    </div>
+    <div class="pipeline-stage">
+      <div class="stage-num" style="background:var(--purple-bg);color:var(--purple)">03</div>
+      <div class="stage-body"><h4>Clean & Extract 清洗</h4><p>Claude AI: 标题清洗、实体提取、分类(8类)、重要性(0-100)、情感分析</p></div>
+      <div class="stage-output"><code>cleaned_title<br>category<br>importance<br>sentiment</code></div>
+    </div>
+    <div class="pipeline-stage">
+      <div class="stage-num" style="background:var(--purple-bg);color:var(--purple)">04</div>
+      <div class="stage-body"><h4>Translate & Summarize</h4><p>Claude AI: 英→中翻译 + 双语段落对照 + 100-200字摘要</p></div>
+      <div class="stage-output"><code>translated_title<br>bilingual_content<br>summary</code></div>
+    </div>
+    <div class="pipeline-stage">
+      <div class="stage-num" style="background:var(--purple-bg);color:var(--purple)">05</div>
+      <div class="stage-body"><h4>Index 向量索引</h4><p>pgvector 向量嵌入，标记 status=completed</p></div>
+      <div class="stage-output"><code>status=completed<br>embedding vector</code></div>
+    </div>
+  </div>
+  <p style="font-size:12px;color:var(--text3);margin-top:10px">并发控制: 信号量 5 并发 · 失败指数退避重试 (max 3) · 断点续跑 (LastCompletedStage)</p>
+</div>
+
+<!-- RSS -->
+<div class="section reveal" id="rss">
+  <div class="section-header">
+    <div class="section-num" style="background:var(--teal-bg);color:var(--teal)">02</div>
+    <h2>RSS 服务器</h2>
+    <span class="tag">eltria/rss</span>
+  </div>
+  <div class="card-grid mb">
+    <div class="card">
+      <div class="card-title"><span class="icon" style="background:var(--teal-bg);color:var(--teal)">C</span>SlidingWindow 缓存</div>
+      <div class="card-desc">内存上限 512MB，尾部淘汰最旧文章。60 秒增量刷新仅加载新文章，预排序供 Fever 二分查找分页。Feed 单遍分桶预渲染 + gzip + ETag。</div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="icon" style="background:var(--teal-bg);color:var(--teal)">F</span>Fever API 协议</div>
+      <div class="card-desc">兼容 Reeder / NetNewsWire 等 RSS 客户端。html 字段组装: <code style="font-family:var(--mono);font-size:12px">summary + &lt;hr&gt; + content_markdown</code>，支持 since_id 增量分页。</div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="icon" style="background:var(--teal-bg);color:var(--teal)">Q</span>核心查询</div>
+      <div class="card-desc">优先读取 <code style="font-family:var(--mono);font-size:12px">content_markdown</code>，fallback 到 <code style="font-family:var(--mono);font-size:12px">cleaned_content</code>。仅查询 status=completed 且未删除的文章。</div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="icon" style="background:var(--teal-bg);color:var(--teal)">M</span>性能指标</div>
+      <div class="card-desc">无锁原子环形缓冲区延迟直方图，暴露 P50/P95/P99 端点。&lt;5ms 响应时间，不对数据库造成读压力。</div>
+    </div>
+  </div>
+  <h3 style="font-size:15px;font-weight:600;margin-bottom:14px">API 端点</h3>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px">
+    <div class="deploy-row" style="background:var(--bg2);padding:8px 14px;border-radius:var(--radius-sm)"><span style="color:var(--teal);font-family:var(--mono);font-size:12px">GET /rss, /atom</span><span>Feed 输出</span></div>
+    <div class="deploy-row" style="background:var(--bg2);padding:8px 14px;border-radius:var(--radius-sm)"><span style="color:var(--teal);font-family:var(--mono);font-size:12px">POST /fever?items</span><span>Fever 文章</span></div>
+    <div class="deploy-row" style="background:var(--bg2);padding:8px 14px;border-radius:var(--radius-sm)"><span style="color:var(--teal);font-family:var(--mono);font-size:12px">GET /api/articles</span><span>JSON 分页</span></div>
+    <div class="deploy-row" style="background:var(--bg2);padding:8px 14px;border-radius:var(--radius-sm)"><span style="color:var(--teal);font-family:var(--mono);font-size:12px">GET /metrics</span><span>延迟指标</span></div>
+  </div>
+</div>
+
+<!-- MORNING BRIEF -->
+<div class="section reveal" id="morning-brief">
+  <div class="section-header">
+    <div class="section-num" style="background:var(--coral-bg);color:var(--coral)">03</div>
+    <h2>Morning Brief 服务</h2>
+    <span class="tag">eltria/moning-brief</span>
+  </div>
+  <div class="card-grid mb">
+    <div class="card">
+      <div class="card-title"><span class="icon" style="background:var(--coral-bg);color:var(--coral)">F</span>Fetcher 采集</div>
+      <div class="card-desc">双源采集: RSS Fever API (5min 周期, since_id 增量) + Tavily Search (3h 周期, include_raw_content)。SHA256(URL) 去重，Valkey Set 存储，7 天 TTL。</div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="icon" style="background:var(--coral-bg);color:var(--coral)">P</span>Processor 处理</div>
+      <div class="card-desc">CJK 比例语言检测 → 外文全文翻译 (GLM-5.1, 16K tokens) → 5 篇批量摘要 + 分类 (16 类)。HTML 清洗 + 截断，限流 1 req/3s。</div>
+    </div>
+  </div>
+  <h3 style="font-size:15px;font-weight:600;margin-bottom:14px">两阶段评分系统</h3>
+  <div class="score-grid">
+    <div class="score-phase">
+      <div class="score-phase-head" style="background:var(--blue-bg)">Phase 1 — 确定性评分 (即时)</div>
+      <div class="score-row"><span class="dim">时效性 Timeliness</span><div style="display:flex;align-items:center;gap:6px"><span class="weight">15%</span><div class="score-bar"><div class="score-bar-fill" style="width:75%;background:var(--blue)"></div></div></div></div>
+      <div class="score-row"><span class="dim">来源可信度</span><div style="display:flex;align-items:center;gap:6px"><span class="weight">10%</span><div class="score-bar"><div class="score-bar-fill" style="width:50%;background:var(--blue)"></div></div></div></div>
+      <div class="score-row"><span class="dim">唯一性 Uniqueness</span><div style="display:flex;align-items:center;gap:6px"><span class="weight">10%</span><div class="score-bar"><div class="score-bar-fill" style="width:50%;background:var(--blue)"></div></div></div></div>
+      <div class="score-row"><span class="dim">类目均衡</span><div style="display:flex;align-items:center;gap:6px"><span class="weight">5%</span><div class="score-bar"><div class="score-bar-fill" style="width:25%;background:var(--blue)"></div></div></div></div>
+    </div>
+    <div class="score-phase">
+      <div class="score-phase-head" style="background:var(--amber-bg)">Phase 2 — LLM 评分 (5篇/批)</div>
+      <div class="score-row"><span class="dim">影响力 Impact</span><div style="display:flex;align-items:center;gap:6px"><span class="weight">15%</span><div class="score-bar"><div class="score-bar-fill" style="width:75%;background:var(--amber)"></div></div></div></div>
+      <div class="score-row"><span class="dim">信息密度</span><div style="display:flex;align-items:center;gap:6px"><span class="weight">15%</span><div class="score-bar"><div class="score-bar-fill" style="width:75%;background:var(--amber)"></div></div></div></div>
+      <div class="score-row"><span class="dim">吸引力 Engagement</span><div style="display:flex;align-items:center;gap:6px"><span class="weight">15%</span><div class="score-bar"><div class="score-bar-fill" style="width:75%;background:var(--amber)"></div></div></div></div>
+      <div class="score-row"><span class="dim">话题相关性</span><div style="display:flex;align-items:center;gap:6px"><span class="weight">15%</span><div class="score-bar"><div class="score-bar-fill" style="width:75%;background:var(--amber)"></div></div></div></div>
+    </div>
+  </div>
+  <div style="margin-top:12px;font-size:12px;color:var(--text3);line-height:1.7">
+    <strong>最终评分</strong>: Σ(dim_score × weight) × 10 + feedback_bias, clamp [0, 100]<br>
+    <strong>反馈循环</strong>: 正向 +2.0 / 负向 -3.0 (不对称惩罚), 按 category×source_domain 维度累计, 14 天 TTL
+  </div>
+  <h3 style="font-size:15px;font-weight:600;margin:28px 0 14px">每日早报 CronJob</h3>
+  <div class="full-card">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
+      <span class="pill" style="background:var(--coral-bg);color:var(--coral-dark);font-weight:500">6:30 CST</span>
+      <span style="font-size:12px;color:var(--text3)">K8s CronJob · 并发采集 · 6 板块推送</span>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px">
+      <div style="padding:12px;background:var(--bg2);border-radius:var(--radius-sm)"><div style="font-size:13px;font-weight:500">天气</div><div style="font-size:11px;color:var(--text3);margin-top:4px">和风 / 彩云 / Tavily</div></div>
+      <div style="padding:12px;background:var(--bg2);border-radius:var(--radius-sm)"><div style="font-size:13px;font-weight:500">较昨天</div><div style="font-size:11px;color:var(--text3);margin-top:4px">温差 / 天气变化</div></div>
+      <div style="padding:12px;background:var(--bg2);border-radius:var(--radius-sm)"><div style="font-size:13px;font-weight:500">穿衣建议</div><div style="font-size:11px;color:var(--text3);margin-top:4px">规则引擎 / LLM</div></div>
+      <div style="padding:12px;background:var(--bg2);border-radius:var(--radius-sm)"><div style="font-size:13px;font-weight:500">飞书任务</div><div style="font-size:11px;color:var(--text3);margin-top:4px">昨日完成 + 今日待办</div></div>
+      <div style="padding:12px;background:var(--bg2);border-radius:var(--radius-sm)"><div style="font-size:13px;font-weight:500">通勤</div><div style="font-size:11px;color:var(--text3);margin-top:4px">高德: 华发四季→科技绿洲</div></div>
+      <div style="padding:12px;background:var(--bg2);border-radius:var(--radius-sm)"><div style="font-size:13px;font-weight:500">OpenClaw</div><div style="font-size:11px;color:var(--text3);margin-top:4px">占位</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- DATA FLOW -->
+<div class="section reveal" id="dataflow">
+  <div class="section-header">
+    <div class="section-num" style="background:var(--bg3);color:var(--text2)">04</div>
+    <h2>字段映射全链路</h2>
+  </div>
+  <div class="dataflow">
+    <table class="dataflow-table">
+      <thead><tr>
+        <th style="color:var(--purple)">News DB</th><th></th>
+        <th style="color:var(--teal)">RSS Fever API</th><th></th>
+        <th style="color:var(--coral)">Morning Brief</th>
+      </tr></thead>
+      <tbody>
+        <tr><td><code>content_markdown</code></td><td class="arrow">→</td><td><code>Article.Content</code></td><td class="arrow">→</td><td><code>RawArticle.Content</code></td></tr>
+        <tr><td><code>summary</code></td><td class="arrow">→</td><td><code>Article.Summary</code></td><td class="arrow">→</td><td><code>PoolItem.Summary</code></td></tr>
+        <tr><td><code>cleaned_title</code></td><td class="arrow">→</td><td><code>Article.CleanedTitle</code></td><td class="arrow">→</td><td><code>PoolItem.Title</code></td></tr>
+        <tr><td><code>category</code></td><td class="arrow">→</td><td><code>Article.Category</code></td><td class="arrow">→</td><td><code>PoolItem.Category</code></td></tr>
+        <tr><td><code>language</code></td><td class="arrow">→</td><td><code>Article.Language</code></td><td class="arrow">→</td><td><code>PoolItem.Language</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <h3 style="font-size:15px;font-weight:600;margin:28px 0 14px">Valkey 存储键</h3>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:8px">
+    <div class="deploy-row" style="background:var(--bg2);padding:10px 14px;border-radius:var(--radius-sm)"><span style="font-family:var(--mono);font-size:12px;color:var(--coral)">pool:items</span><span>Sorted Set · score=FinalScore</span></div>
+    <div class="deploy-row" style="background:var(--bg2);padding:10px 14px;border-radius:var(--radius-sm)"><span style="font-family:var(--mono);font-size:12px;color:var(--coral)">pool:item:{id}</span><span>JSON · 6h TTL</span></div>
+    <div class="deploy-row" style="background:var(--bg2);padding:10px 14px;border-radius:var(--radius-sm)"><span style="font-family:var(--mono);font-size:12px;color:var(--coral)">seen_articles</span><span>Set · 7d TTL · 去重</span></div>
+    <div class="deploy-row" style="background:var(--bg2);padding:10px 14px;border-radius:var(--radius-sm)"><span style="font-family:var(--mono);font-size:12px;color:var(--coral)">fetch:last_since_id</span><span>String · RSS 增量游标</span></div>
+    <div class="deploy-row" style="background:var(--bg2);padding:10px 14px;border-radius:var(--radius-sm)"><span style="font-family:var(--mono);font-size:12px;color:var(--coral)">feedback:bias:{cat}:{dom}</span><span>Float · 14d TTL</span></div>
+    <div class="deploy-row" style="background:var(--bg2);padding:10px 14px;border-radius:var(--radius-sm)"><span style="font-family:var(--mono);font-size:12px;color:var(--coral)">scoring:weights</span><span>JSON · 可调权重</span></div>
+  </div>
+</div>
+
+<!-- DEPLOY -->
+<div class="section reveal" id="deploy">
+  <div class="section-header">
+    <div class="section-num" style="background:var(--bg3);color:var(--text2)">05</div>
+    <h2>部署架构</h2>
+    <span class="tag">火山引擎 VKE</span>
+  </div>
+  <div class="deploy-grid">
+    <div class="deploy-card">
+      <div class="deploy-card-head"><span class="ns" style="background:var(--teal-bg);color:var(--teal)">rss</span><h4>RSS Deployment</h4></div>
+      <div class="deploy-card-body">
+        <div class="deploy-row"><span>Replicas</span><span>1</span></div>
+        <div class="deploy-row"><span>Port</span><span>8091 → 31020</span></div>
+        <div class="deploy-row"><span>Request</span><span>100m / 128Mi</span></div>
+        <div class="deploy-row"><span>Limit</span><span>500m / 768Mi</span></div>
+      </div>
+    </div>
+    <div class="deploy-card">
+      <div class="deploy-card-head"><span class="ns" style="background:var(--coral-bg);color:var(--coral)">morning-brief</span><h4>Brief Deployment</h4></div>
+      <div class="deploy-card-body">
+        <div class="deploy-row"><span>Replicas</span><span>1</span></div>
+        <div class="deploy-row"><span>Port</span><span>8080 → 32197</span></div>
+        <div class="deploy-row"><span>Request</span><span>100m / 128Mi</span></div>
+        <div class="deploy-row"><span>Limit</span><span>500m / 512Mi</span></div>
+      </div>
+    </div>
+    <div class="deploy-card">
+      <div class="deploy-card-head"><span class="ns" style="background:var(--coral-bg);color:var(--coral)">morning-brief</span><h4>Briefing CronJob</h4></div>
+      <div class="deploy-card-body">
+        <div class="deploy-row"><span>Schedule</span><span>30 6 * * *</span></div>
+        <div class="deploy-row"><span>Request</span><span>50m / 32Mi</span></div>
+        <div class="deploy-row"><span>Limit</span><span>200m / 128Mi</span></div>
+      </div>
+    </div>
+    <div class="deploy-card">
+      <div class="deploy-card-head"><span class="ns" style="background:var(--bg3);color:var(--text3)">default</span><h4>Valkey StatefulSet</h4></div>
+      <div class="deploy-card-body">
+        <div class="deploy-row"><span>Port</span><span>6379</span></div>
+        <div class="deploy-row"><span>Consumer</span><span>morning-brief</span></div>
+      </div>
+    </div>
+  </div>
+  <h3 style="font-size:15px;font-weight:600;margin:28px 0 14px">CI/CD 流水线</h3>
+  <div class="full-card">
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:13px">
+      <span class="pill" style="background:var(--bg3);color:var(--text2);font-weight:500">git push main</span>
+      <span style="color:var(--text3)">→</span>
+      <span class="pill" style="background:var(--bg3);color:var(--text2)">Build (linux/amd64)</span>
+      <span style="color:var(--text3)">→</span>
+      <span class="pill" style="background:var(--bg3);color:var(--text2)">GHCR + 阿里云 ACR</span>
+      <span style="color:var(--text3)">→</span>
+      <span class="pill" style="background:var(--bg3);color:var(--text2)">kubectl set image</span>
+      <span style="color:var(--text3)">→</span>
+      <span class="pill" style="background:var(--green-bg);color:var(--green)">rollout (300s)</span>
+    </div>
+    <p style="font-size:12px;color:var(--text3);margin-top:10px">镜像标签: <code style="font-family:var(--mono);font-size:11px;background:var(--bg2);padding:2px 6px;border-radius:4px">YYYYMMDDHHmmss-{git_short_sha}</code></p>
+  </div>
+  <h3 style="font-size:15px;font-weight:600;margin:28px 0 14px">环境变量</h3>
+  <div class="env-section">
+    <div class="env-group">
+      <div class="env-group-head" onclick="toggleEnv(this)">
+        <span class="pill" style="background:var(--coral-bg);color:var(--coral-dark)">MB_</span>Morning Brief (12 变量)<span class="chevron">▼</span>
+      </div>
+      <div class="env-group-body">
+        <div class="env-row"><span class="key">MB_RSS_BASE_URL</span><span class="val">RSS 服务器地址 (Fever API)</span></div>
+        <div class="env-row"><span class="key">MB_RSS_TOKEN</span><span class="val">RSS API 认证 Token</span></div>
+        <div class="env-row"><span class="key">MB_TAVILY_API_KEY</span><span class="val">Tavily 搜索 Key (逗号分隔)</span></div>
+        <div class="env-row"><span class="key">MB_LLM_BASE_URL</span><span class="val">智谱 GLM API 地址</span></div>
+        <div class="env-row"><span class="key">MB_LLM_FAST_MODEL</span><span class="val">GLM-4.5-air</span></div>
+        <div class="env-row"><span class="key">MB_LLM_STRONG_MODEL</span><span class="val">GLM-5.1</span></div>
+        <div class="env-row"><span class="key">MB_VALKEY_ADDR</span><span class="val">Valkey 连接地址</span></div>
+        <div class="env-row"><span class="key">MB_SERVERCHAN_KEY</span><span class="val">Server酱 SendKey</span></div>
+        <div class="env-row"><span class="key">MB_AMAP_KEY</span><span class="val">高德 API Key</span></div>
+        <div class="env-row"><span class="key">MB_QWEATHER_KEY</span><span class="val">和风天气 Key</span></div>
+        <div class="env-row"><span class="key">MB_FEISHU_APP_ID</span><span class="val">飞书应用 ID</span></div>
+        <div class="env-row"><span class="key">MB_FEISHU_APP_SECRET</span><span class="val">飞书应用密钥</span></div>
+      </div>
+    </div>
+    <div class="env-group">
+      <div class="env-group-head" onclick="toggleEnv(this)">
+        <span class="pill" style="background:var(--teal-bg);color:var(--teal-dark)">RSS</span>RSS 服务器 (4 变量)<span class="chevron">▼</span>
+      </div>
+      <div class="env-group-body">
+        <div class="env-row"><span class="key">DATABASE_URL</span><span class="val">Supabase PostgreSQL</span></div>
+        <div class="env-row"><span class="key">AUTH_TOKEN</span><span class="val">API 认证 Token</span></div>
+        <div class="env-row"><span class="key">FEVER_API_KEY</span><span class="val">Fever 协议 Key (MD5)</span></div>
+        <div class="env-row"><span class="key">CACHE_STRATEGY</span><span class="val">sliding_window / full_refresh</span></div>
+      </div>
+    </div>
+    <div class="env-group">
+      <div class="env-group-head" onclick="toggleEnv(this)">
+        <span class="pill" style="background:var(--purple-bg);color:var(--purple-dark)">NEWS</span>News 系统 (4 变量)<span class="chevron">▼</span>
+      </div>
+      <div class="env-group-body">
+        <div class="env-row"><span class="key">DATABASE_URL</span><span class="val">Supabase PostgreSQL</span></div>
+        <div class="env-row"><span class="key">ANTHROPIC_API_KEY</span><span class="val">Claude API Key</span></div>
+        <div class="env-row"><span class="key">RSSHUB_URL</span><span class="val">RSSHub 服务地址</span></div>
+        <div class="env-row"><span class="key">API_KEY</span><span class="val">API 写操作认证</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- DECISIONS -->
+<div class="section reveal" id="decisions">
+  <div class="section-header">
+    <div class="section-num" style="background:var(--bg3);color:var(--text2)">06</div>
+    <h2>关键设计决策</h2>
+  </div>
+  <div class="decision-list">
+    <div class="decision-item"><span class="decision">三服务分离</span><span class="reason">News(采集) / RSS(缓存) / Brief(消费) 职责清晰，独立扩展，通过 PostgreSQL 解耦</span></div>
+    <div class="decision-item"><span class="decision">PostgreSQL 数据总线</span><span class="reason">News 写入、RSS 读取，避免服务间直接耦合，Supabase 托管降低运维成本</span></div>
+    <div class="decision-item"><span class="decision">Fever API 协议</span><span class="reason">兼容 Reeder、NetNewsWire 等现有 RSS 客户端，同时作为 Morning-Brief 的数据桥梁</span></div>
+    <div class="decision-item"><span class="decision">内存缓存 + 预渲染</span><span class="reason">RSS 服务器 &lt;5ms 响应，SlidingWindow 512MB 上限，不对数据库造成读压力</span></div>
+    <div class="decision-item"><span class="decision">两阶段评分</span><span class="reason">Phase1 确定性评分保证速度和稳定性，Phase2 LLM 评分提升精度</span></div>
+    <div class="decision-item"><span class="decision">不对称反馈 -3 vs +2</span><span class="reason">负面体验代价更高，快速降权差内容，正向激励温和避免刷分</span></div>
+    <div class="decision-item"><span class="decision">CJK 比例语言检测</span><span class="reason">不依赖 fetcher 标记，由实际内容 CJK 字符比例决定</span></div>
+    <div class="decision-item"><span class="decision">content_markdown 优先</span><span class="reason">比 cleaned_content 完整，保留文章结构和格式化信息</span></div>
+    <div class="decision-item"><span class="decision">Valkey Sorted Set 新闻池</span><span class="reason">天然按分数排序，6h TTL 自动过期，组装摘要时保证类目多样性</span></div>
+    <div class="decision-item"><span class="decision">API Key 轮换 + 月度预算</span><span class="reason">多 Tavily Key 自动切换 + 月度用量追踪，避免超额</span></div>
+  </div>
+</div>
+
+<footer class="footer">
+  <p>News Morning Brief System Architecture · Go Microservices · 107+ Sources</p>
+  <p style="margin-top:6px">eltria/news · eltria/rss · eltria/moning-brief</p>
+</footer>
+
+<script>
+const obs=new IntersectionObserver(e=>{e.forEach(el=>{if(el.isIntersecting){el.target.classList.add('visible');obs.unobserve(el.target)}})},{threshold:.1});
+document.querySelectorAll('.reveal').forEach(el=>obs.observe(el));
+const navLinks=document.querySelectorAll('.nav-links a');
+window.addEventListener('scroll',()=>{
+  let c='';
+  document.querySelectorAll('[id]').forEach(s=>{if(window.scrollY>=s.offsetTop-120)c=s.id});
+  navLinks.forEach(a=>a.classList.toggle('active',a.getAttribute('href')==='#'+c));
+});
+function toggleEnv(el){el.classList.toggle('open');el.nextElementSibling.classList.toggle('open')}
+</script>
+</body>
+</html>

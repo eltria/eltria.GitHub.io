@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="zh-cn" class="">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Timestamp Converter — Eltria</title>
+  <meta name="description" content="Convert between Unix timestamps and human-readable dates.">
+  <script src="/assets/js/theme.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { darkMode: 'class' }</script>
+  <link rel="stylesheet" href="/assets/css/global.css">
+</head>
+<body class="bg-white dark:bg-gray-950 text-gray-800 dark:text-gray-200 antialiased">
+
+  <script type="module">
+    import { initNav } from '/assets/js/nav.js';
+    initNav();
+  </script>
+
+  <div class="max-w-3xl mx-auto px-6 py-16">
+    <div class="mb-6">
+      <a href="/tools/" class="text-xs text-gray-400 hover:text-blue-500 no-underline">← Tools</a>
+    </div>
+    <h1 class="text-2xl font-bold mb-6">Timestamp Converter</h1>
+
+    <!-- Current Time -->
+    <div class="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-5 mb-8">
+      <div class="text-xs font-medium text-gray-400 mb-2">Current Time</div>
+      <div id="now" class="text-2xl font-mono font-semibold tabular-nums"></div>
+      <div id="now-date" class="text-sm text-gray-500 mt-1 font-mono"></div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <!-- Timestamp → Date -->
+      <div class="space-y-4">
+        <h2 class="text-sm font-semibold">Timestamp → Date</h2>
+        <input id="ts-input" type="number" class="w-full px-4 py-3 text-sm bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 font-mono" placeholder="e.g. 1700000000">
+        <div class="flex gap-2">
+          <button onclick="tsToDate('s')" class="px-3 py-1.5 text-xs font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">Seconds</button>
+          <button onclick="tsToDate('ms')" class="px-3 py-1.5 text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">Milliseconds</button>
+        </div>
+        <div id="ts-result" class="text-sm font-mono space-y-1"></div>
+      </div>
+
+      <!-- Date → Timestamp -->
+      <div class="space-y-4">
+        <h2 class="text-sm font-semibold">Date → Timestamp</h2>
+        <input id="date-input" type="datetime-local" step="1" class="w-full px-4 py-3 text-sm bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 font-mono">
+        <button onclick="dateToTs()" class="px-3 py-1.5 text-xs font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">Convert</button>
+        <div id="date-result" class="text-sm font-mono space-y-1"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Live clock
+    function updateClock() {
+      const now = Math.floor(Date.now() / 1000);
+      document.getElementById('now').textContent = now;
+      document.getElementById('now-date').textContent = new Date().toISOString();
+    }
+    updateClock();
+    setInterval(updateClock, 1000);
+
+    // Set default datetime input to now
+    const dtInput = document.getElementById('date-input');
+    const local = new Date();
+    local.setMinutes(local.getMinutes() - local.getTimezoneOffset());
+    dtInput.value = local.toISOString().slice(0, 19);
+
+    function tsToDate(unit) {
+      const val = document.getElementById('ts-input').value.trim();
+      if (!val) return;
+      const ms = unit === 'ms' ? parseInt(val) : parseInt(val) * 1000;
+      const d = new Date(ms);
+      if (isNaN(d.getTime())) {
+        document.getElementById('ts-result').innerHTML = '<span class="text-red-500">Invalid timestamp</span>';
+        return;
+      }
+      document.getElementById('ts-result').innerHTML = `
+        <div><span class="text-gray-400">UTC:</span> ${d.toUTCString()}</div>
+        <div><span class="text-gray-400">ISO:</span> ${d.toISOString()}</div>
+        <div><span class="text-gray-400">Local:</span> ${d.toLocaleString('zh-CN')}</div>
+        <div><span class="text-gray-400">Relative:</span> ${relativeTime(d)}</div>
+      `;
+    }
+
+    function dateToTs() {
+      const d = new Date(dtInput.value);
+      if (isNaN(d.getTime())) {
+        document.getElementById('date-result').innerHTML = '<span class="text-red-500">Invalid date</span>';
+        return;
+      }
+      const s = Math.floor(d.getTime() / 1000);
+      document.getElementById('date-result').innerHTML = `
+        <div><span class="text-gray-400">Seconds:</span> <span class="cursor-pointer hover:text-blue-500" onclick="navigator.clipboard.writeText('${s}')">${s}</span></div>
+        <div><span class="text-gray-400">Milliseconds:</span> <span class="cursor-pointer hover:text-blue-500" onclick="navigator.clipboard.writeText('${d.getTime()}')">${d.getTime()}</span></div>
+        <div class="text-xs text-gray-400 mt-1">Click value to copy</div>
+      `;
+    }
+
+    function relativeTime(d) {
+      const diff = (Date.now() - d.getTime()) / 1000;
+      const abs = Math.abs(diff);
+      const suffix = diff > 0 ? 'ago' : 'from now';
+      if (abs < 60) return `${Math.floor(abs)}s ${suffix}`;
+      if (abs < 3600) return `${Math.floor(abs / 60)}m ${suffix}`;
+      if (abs < 86400) return `${Math.floor(abs / 3600)}h ${suffix}`;
+      return `${Math.floor(abs / 86400)}d ${suffix}`;
+    }
+  </script>
+</body>
+</html>

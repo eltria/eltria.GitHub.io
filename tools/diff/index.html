@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="zh-cn" class="">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Text Diff — Eltria</title>
+  <meta name="description" content="Compare two texts and see differences highlighted.">
+  <script src="/assets/js/theme.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { darkMode: 'class' }</script>
+  <link rel="stylesheet" href="/assets/css/global.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/diff_match_patch/20121119/diff_match_patch.js"></script>
+</head>
+<body class="bg-white dark:bg-gray-950 text-gray-800 dark:text-gray-200 antialiased">
+
+  <script type="module">
+    import { initNav } from '/assets/js/nav.js';
+    initNav();
+  </script>
+
+  <div class="max-w-6xl mx-auto px-6 py-16">
+    <div class="mb-6">
+      <a href="/tools/" class="text-xs text-gray-400 hover:text-blue-500 no-underline">�� Tools</a>
+    </div>
+    <h1 class="text-2xl font-bold mb-6">Text Diff</h1>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+      <div>
+        <label class="block text-xs font-medium text-gray-400 mb-2">Original</label>
+        <textarea id="left" class="tool-textarea w-full h-64 p-4 text-sm bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500" placeholder="Paste original text..." spellcheck="false"></textarea>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-400 mb-2">Modified</label>
+        <textarea id="right" class="tool-textarea w-full h-64 p-4 text-sm bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500" placeholder="Paste modified text..." spellcheck="false"></textarea>
+      </div>
+    </div>
+
+    <div class="flex flex-wrap gap-2 mb-6">
+      <button onclick="runDiff()" class="px-4 py-2 text-xs font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">Compare</button>
+      <button onclick="swap()" class="px-4 py-2 text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">Swap</button>
+      <button onclick="clearAll()" class="px-4 py-2 text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">Clear</button>
+      <label class="flex items-center gap-1.5 ml-auto text-xs text-gray-500 cursor-pointer">
+        <input type="checkbox" id="semantic" checked class="rounded"> Semantic cleanup
+      </label>
+      <label class="flex items-center gap-1.5 text-xs text-gray-500 cursor-pointer">
+        <input type="checkbox" id="line-mode" class="rounded"> Line-by-line mode
+      </label>
+    </div>
+
+    <!-- Inline diff output -->
+    <div>
+      <label class="block text-xs font-medium text-gray-400 mb-2">Diff Result</label>
+      <div id="output" class="w-full min-h-[12rem] p-4 text-sm bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl font-mono whitespace-pre-wrap break-all leading-relaxed overflow-auto max-h-[32rem]"></div>
+    </div>
+
+    <div id="stats" class="mt-3 text-xs text-gray-500"></div>
+  </div>
+
+  <script>
+    const dmp = new diff_match_patch();
+
+    function escapeHtml(s) {
+      return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    function runDiff() {
+      const left = document.getElementById('left').value;
+      const right = document.getElementById('right').value;
+      const semantic = document.getElementById('semantic').checked;
+      const lineMode = document.getElementById('line-mode').checked;
+
+      let diffs;
+      if (lineMode) {
+        const { chars1, chars2, lineArray } = dmp.diff_linesToChars_(left, right);
+        diffs = dmp.diff_main(chars1, chars2, false);
+        dmp.diff_charsToLines_(diffs, lineArray);
+      } else {
+        diffs = dmp.diff_main(left, right);
+      }
+
+      if (semantic) dmp.diff_cleanupSemantic(diffs);
+
+      let html = '';
+      let added = 0, removed = 0, unchanged = 0;
+
+      diffs.forEach(([op, text]) => {
+        const escaped = escapeHtml(text);
+        if (op === 1) {
+          html += `<span class="bg-green-200 dark:bg-green-900/50 text-green-900 dark:text-green-200">${escaped}</span>`;
+          added += text.length;
+        } else if (op === -1) {
+          html += `<span class="bg-red-200 dark:bg-red-900/50 text-red-900 dark:text-red-200 line-through">${escaped}</span>`;
+          removed += text.length;
+        } else {
+          html += escaped;
+          unchanged += text.length;
+        }
+      });
+
+      document.getElementById('output').innerHTML = html;
+      document.getElementById('stats').textContent = `+${added} chars added, -${removed} chars removed, ${unchanged} chars unchanged`;
+    }
+
+    function swap() {
+      const l = document.getElementById('left');
+      const r = document.getElementById('right');
+      [l.value, r.value] = [r.value, l.value];
+    }
+
+    function clearAll() {
+      document.getElementById('left').value = '';
+      document.getElementById('right').value = '';
+      document.getElementById('output').innerHTML = '';
+      document.getElementById('stats').textContent = '';
+    }
+  </script>
+</body>
+</html>

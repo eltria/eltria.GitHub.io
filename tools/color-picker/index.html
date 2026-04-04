@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="zh-cn" class="">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Color Picker — Eltria</title>
+  <meta name="description" content="Pick colors and convert between HEX, RGB, and HSL formats.">
+  <script src="/assets/js/theme.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { darkMode: 'class' }</script>
+  <link rel="stylesheet" href="/assets/css/global.css">
+</head>
+<body class="bg-white dark:bg-gray-950 text-gray-800 dark:text-gray-200 antialiased">
+
+  <script type="module">
+    import { initNav } from '/assets/js/nav.js';
+    initNav();
+  </script>
+
+  <div class="max-w-3xl mx-auto px-6 py-16">
+    <div class="mb-6">
+      <a href="/tools/" class="text-xs text-gray-400 hover:text-blue-500 no-underline">← Tools</a>
+    </div>
+    <h1 class="text-2xl font-bold mb-6">Color Picker</h1>
+
+    <!-- Color Preview + Picker -->
+    <div class="flex flex-col sm:flex-row gap-6 mb-8">
+      <div class="relative">
+        <div id="color-preview" class="w-40 h-40 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-inner cursor-pointer" style="background:#3b82f6" title="Click to pick color"></div>
+        <input type="color" id="native-picker" value="#3b82f6" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+      </div>
+
+      <div class="flex-1 space-y-4">
+        <!-- HEX -->
+        <div>
+          <label class="block text-xs font-medium text-gray-400 mb-1">HEX</label>
+          <div class="flex gap-2">
+            <input id="hex" type="text" value="#3b82f6" class="flex-1 px-3 py-2 text-sm bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg font-mono focus:outline-none focus:ring-2 focus:ring-blue-500/30" spellcheck="false">
+            <button onclick="copy('hex')" class="px-2 py-2 text-xs text-gray-400 hover:text-blue-500">Copy</button>
+          </div>
+        </div>
+        <!-- RGB -->
+        <div>
+          <label class="block text-xs font-medium text-gray-400 mb-1">RGB</label>
+          <div class="flex gap-2">
+            <input id="rgb" type="text" value="rgb(59, 130, 246)" class="flex-1 px-3 py-2 text-sm bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg font-mono focus:outline-none focus:ring-2 focus:ring-blue-500/30" spellcheck="false">
+            <button onclick="copy('rgb')" class="px-2 py-2 text-xs text-gray-400 hover:text-blue-500">Copy</button>
+          </div>
+        </div>
+        <!-- HSL -->
+        <div>
+          <label class="block text-xs font-medium text-gray-400 mb-1">HSL</label>
+          <div class="flex gap-2">
+            <input id="hsl" type="text" value="hsl(217, 91%, 60%)" class="flex-1 px-3 py-2 text-sm bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg font-mono focus:outline-none focus:ring-2 focus:ring-blue-500/30" spellcheck="false">
+            <button onclick="copy('hsl')" class="px-2 py-2 text-xs text-gray-400 hover:text-blue-500">Copy</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RGB Sliders -->
+    <div class="space-y-3 mb-8">
+      <div class="flex items-center gap-4">
+        <span class="text-xs font-medium text-red-400 w-4">R</span>
+        <input type="range" id="r-slider" min="0" max="255" value="59" class="flex-1 accent-red-500">
+        <span id="r-val" class="text-xs font-mono w-8 text-right">59</span>
+      </div>
+      <div class="flex items-center gap-4">
+        <span class="text-xs font-medium text-green-400 w-4">G</span>
+        <input type="range" id="g-slider" min="0" max="255" value="130" class="flex-1 accent-green-500">
+        <span id="g-val" class="text-xs font-mono w-8 text-right">130</span>
+      </div>
+      <div class="flex items-center gap-4">
+        <span class="text-xs font-medium text-blue-400 w-4">B</span>
+        <input type="range" id="b-slider" min="0" max="255" value="246" class="flex-1 accent-blue-500">
+        <span id="b-val" class="text-xs font-mono w-8 text-right">246</span>
+      </div>
+    </div>
+
+    <!-- Saved colors -->
+    <div>
+      <div class="flex items-center justify-between mb-2">
+        <label class="text-xs font-medium text-gray-400">Saved Colors</label>
+        <button onclick="saveColor()" class="text-xs text-blue-500 hover:text-blue-600">+ Save Current</button>
+      </div>
+      <div id="saved" class="flex flex-wrap gap-2"></div>
+    </div>
+  </div>
+
+  <script>
+    const hexEl = document.getElementById('hex');
+    const rgbEl = document.getElementById('rgb');
+    const hslEl = document.getElementById('hsl');
+    const previewEl = document.getElementById('color-preview');
+    const pickerEl = document.getElementById('native-picker');
+    const rSlider = document.getElementById('r-slider');
+    const gSlider = document.getElementById('g-slider');
+    const bSlider = document.getElementById('b-slider');
+
+    let currentRGB = { r: 59, g: 130, b: 246 };
+
+    function rgbToHex(r, g, b) {
+      return '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('');
+    }
+
+    function hexToRgb(hex) {
+      hex = hex.replace('#', '');
+      if (hex.length === 3) hex = hex.split('').map(c => c + c).join('');
+      return { r: parseInt(hex.slice(0, 2), 16), g: parseInt(hex.slice(2, 4), 16), b: parseInt(hex.slice(4, 6), 16) };
+    }
+
+    function rgbToHsl(r, g, b) {
+      r /= 255; g /= 255; b /= 255;
+      const max = Math.max(r, g, b), min = Math.min(r, g, b);
+      let h, s, l = (max + min) / 2;
+      if (max === min) {
+        h = s = 0;
+      } else {
+        const d = max - min;
+        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+        switch (max) {
+          case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
+          case g: h = ((b - r) / d + 2) / 6; break;
+          case b: h = ((r - g) / d + 4) / 6; break;
+        }
+      }
+      return { h: Math.round(h * 360), s: Math.round(s * 100), l: Math.round(l * 100) };
+    }
+
+    function updateFromRGB(r, g, b, source) {
+      currentRGB = { r, g, b };
+      const hex = rgbToHex(r, g, b);
+      const hsl = rgbToHsl(r, g, b);
+
+      previewEl.style.background = hex;
+      pickerEl.value = hex;
+
+      if (source !== 'hex') hexEl.value = hex;
+      if (source !== 'rgb') rgbEl.value = `rgb(${r}, ${g}, ${b})`;
+      if (source !== 'hsl') hslEl.value = `hsl(${hsl.h}, ${hsl.s}%, ${hsl.l}%)`;
+
+      rSlider.value = r; gSlider.value = g; bSlider.value = b;
+      document.getElementById('r-val').textContent = r;
+      document.getElementById('g-val').textContent = g;
+      document.getElementById('b-val').textContent = b;
+    }
+
+    // Native picker
+    pickerEl.addEventListener('input', (e) => {
+      const { r, g, b } = hexToRgb(e.target.value);
+      updateFromRGB(r, g, b, 'picker');
+    });
+
+    // HEX input
+    hexEl.addEventListener('input', () => {
+      const hex = hexEl.value.trim();
+      if (/^#?[0-9a-fA-F]{3,6}$/.test(hex)) {
+        const { r, g, b } = hexToRgb(hex);
+        updateFromRGB(r, g, b, 'hex');
+      }
+    });
+
+    // RGB input
+    rgbEl.addEventListener('input', () => {
+      const m = rgbEl.value.match(/(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
+      if (m) updateFromRGB(+m[1], +m[2], +m[3], 'rgb');
+    });
+
+    // HSL input
+    hslEl.addEventListener('input', () => {
+      const m = hslEl.value.match(/(\d+)\s*,\s*(\d+)%?\s*,\s*(\d+)%?/);
+      if (m) {
+        // Convert HSL to RGB
+        const h = +m[1] / 360, s = +m[2] / 100, l = +m[3] / 100;
+        let r, g, b;
+        if (s === 0) { r = g = b = l; }
+        else {
+          const hue2rgb = (p, q, t) => { if (t < 0) t += 1; if (t > 1) t -= 1; if (t < 1/6) return p + (q - p) * 6 * t; if (t < 1/2) return q; if (t < 2/3) return p + (q - p) * (2/3 - t) * 6; return p; };
+          const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+          const p = 2 * l - q;
+          r = hue2rgb(p, q, h + 1/3); g = hue2rgb(p, q, h); b = hue2rgb(p, q, h - 1/3);
+        }
+        updateFromRGB(Math.round(r * 255), Math.round(g * 255), Math.round(b * 255), 'hsl');
+      }
+    });
+
+    // Sliders
+    [rSlider, gSlider, bSlider].forEach(s => {
+      s.addEventListener('input', () => {
+        updateFromRGB(+rSlider.value, +gSlider.value, +bSlider.value, 'slider');
+      });
+    });
+
+    // Copy
+    function copy(id) {
+      navigator.clipboard.writeText(document.getElementById(id).value);
+    }
+
+    // Saved colors
+    let savedColors = JSON.parse(localStorage.getItem('eltria-colors') || '[]');
+
+    function renderSaved() {
+      const el = document.getElementById('saved');
+      el.innerHTML = savedColors.map((c, i) =>
+        `<div class="w-8 h-8 rounded-lg border border-gray-200 dark:border-gray-700 cursor-pointer hover:scale-110 transition-transform relative group" style="background:${c}" onclick="loadColor('${c}')" title="${c}">
+          <button onclick="event.stopPropagation();removeColor(${i})" class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-gray-300 dark:bg-gray-700 text-[10px] leading-none hidden group-hover:flex items-center justify-center">×</button>
+        </div>`
+      ).join('');
+    }
+
+    function saveColor() {
+      const hex = hexEl.value;
+      if (!savedColors.includes(hex)) {
+        savedColors.push(hex);
+        localStorage.setItem('eltria-colors', JSON.stringify(savedColors));
+        renderSaved();
+      }
+    }
+
+    function loadColor(hex) {
+      const { r, g, b } = hexToRgb(hex);
+      updateFromRGB(r, g, b, 'saved');
+    }
+
+    function removeColor(i) {
+      savedColors.splice(i, 1);
+      localStorage.setItem('eltria-colors', JSON.stringify(savedColors));
+      renderSaved();
+    }
+
+    renderSaved();
+  </script>
+</body>
+</html>

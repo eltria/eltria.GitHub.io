@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="zh-cn" class="">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hash Generator — Eltria</title>
+  <meta name="description" content="Generate SHA-256, SHA-384, SHA-512, and MD5 hashes using Web Crypto API.">
+  <script src="/assets/js/theme.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { darkMode: 'class' }</script>
+  <link rel="stylesheet" href="/assets/css/global.css">
+</head>
+<body class="bg-white dark:bg-gray-950 text-gray-800 dark:text-gray-200 antialiased">
+
+  <script type="module">
+    import { initNav } from '/assets/js/nav.js';
+    initNav();
+  </script>
+
+  <div class="max-w-3xl mx-auto px-6 py-16">
+    <div class="mb-6">
+      <a href="/tools/" class="text-xs text-gray-400 hover:text-blue-500 no-underline">← Tools</a>
+    </div>
+    <h1 class="text-2xl font-bold mb-2">Hash Generator</h1>
+    <p class="text-xs text-gray-400 mb-6">Using Web Crypto API — everything runs in your browser.</p>
+
+    <!-- Input -->
+    <div class="mb-6">
+      <div class="flex items-center justify-between mb-2">
+        <label class="text-xs font-medium text-gray-400">Input</label>
+        <label class="flex items-center gap-1.5 text-xs text-gray-500 cursor-pointer">
+          <input type="checkbox" id="uppercase" class="rounded"> Uppercase
+        </label>
+      </div>
+      <textarea id="input" class="tool-textarea w-full h-32 p-4 text-sm bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500" placeholder="Enter text to hash..." spellcheck="false"></textarea>
+    </div>
+
+    <!-- File input -->
+    <div class="mb-8">
+      <label class="block text-xs font-medium text-gray-400 mb-2">Or drop/select a file</label>
+      <div id="drop-zone" class="border-2 border-dashed border-gray-200 dark:border-gray-800 rounded-xl p-6 text-center text-sm text-gray-400 cursor-pointer hover:border-blue-400 transition-colors">
+        <input type="file" id="file-input" class="hidden">
+        Click to select or drag & drop a file
+      </div>
+      <div id="file-name" class="mt-2 text-xs text-gray-500"></div>
+    </div>
+
+    <!-- Hash results -->
+    <div class="space-y-4" id="results">
+      <div class="hash-row" data-algo="SHA-256">
+        <label class="block text-xs font-medium text-gray-400 mb-1">SHA-256</label>
+        <div class="flex items-center gap-2">
+          <input type="text" readonly class="hash-output flex-1 px-3 py-2 text-xs bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg font-mono" value="">
+          <button onclick="copyHash(this)" class="shrink-0 px-2 py-2 text-xs text-gray-400 hover:text-blue-500 transition-colors">Copy</button>
+        </div>
+      </div>
+      <div class="hash-row" data-algo="SHA-384">
+        <label class="block text-xs font-medium text-gray-400 mb-1">SHA-384</label>
+        <div class="flex items-center gap-2">
+          <input type="text" readonly class="hash-output flex-1 px-3 py-2 text-xs bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg font-mono" value="">
+          <button onclick="copyHash(this)" class="shrink-0 px-2 py-2 text-xs text-gray-400 hover:text-blue-500 transition-colors">Copy</button>
+        </div>
+      </div>
+      <div class="hash-row" data-algo="SHA-512">
+        <label class="block text-xs font-medium text-gray-400 mb-1">SHA-512</label>
+        <div class="flex items-center gap-2">
+          <input type="text" readonly class="hash-output flex-1 px-3 py-2 text-xs bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg font-mono" value="">
+          <button onclick="copyHash(this)" class="shrink-0 px-2 py-2 text-xs text-gray-400 hover:text-blue-500 transition-colors">Copy</button>
+        </div>
+      </div>
+      <div class="hash-row" data-algo="SHA-1">
+        <label class="block text-xs font-medium text-gray-400 mb-1">SHA-1 <span class="text-yellow-500">(deprecated)</span></label>
+        <div class="flex items-center gap-2">
+          <input type="text" readonly class="hash-output flex-1 px-3 py-2 text-xs bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg font-mono" value="">
+          <button onclick="copyHash(this)" class="shrink-0 px-2 py-2 text-xs text-gray-400 hover:text-blue-500 transition-colors">Copy</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const input = document.getElementById('input');
+    const fileInput = document.getElementById('file-input');
+    const dropZone = document.getElementById('drop-zone');
+    const fileName = document.getElementById('file-name');
+    const uppercaseEl = document.getElementById('uppercase');
+
+    let currentData = null; // ArrayBuffer for file, null for text mode
+
+    async function hashBuffer(buffer) {
+      const algos = ['SHA-256', 'SHA-384', 'SHA-512', 'SHA-1'];
+      const upper = uppercaseEl.checked;
+
+      for (const algo of algos) {
+        const row = document.querySelector(`[data-algo="${algo}"] .hash-output`);
+        try {
+          const hash = await crypto.subtle.digest(algo, buffer);
+          const hex = Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+          row.value = upper ? hex.toUpperCase() : hex;
+        } catch (e) {
+          row.value = 'Error: ' + e.message;
+        }
+      }
+    }
+
+    async function hashText() {
+      currentData = null;
+      const text = input.value;
+      if (!text) {
+        document.querySelectorAll('.hash-output').forEach(el => el.value = '');
+        return;
+      }
+      const buffer = new TextEncoder().encode(text);
+      await hashBuffer(buffer);
+    }
+
+    async function hashFile(file) {
+      fileName.textContent = `${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+      currentData = await file.arrayBuffer();
+      await hashBuffer(currentData);
+    }
+
+    function copyHash(btn) {
+      const input = btn.parentElement.querySelector('.hash-output');
+      navigator.clipboard.writeText(input.value);
+      btn.textContent = 'Done';
+      setTimeout(() => btn.textContent = 'Copy', 1000);
+    }
+
+    input.addEventListener('input', hashText);
+    uppercaseEl.addEventListener('change', () => {
+      if (currentData) hashBuffer(currentData);
+      else hashText();
+    });
+
+    dropZone.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', (e) => {
+      if (e.target.files[0]) hashFile(e.target.files[0]);
+    });
+    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('border-blue-400'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('border-blue-400'));
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('border-blue-400');
+      if (e.dataTransfer.files[0]) hashFile(e.dataTransfer.files[0]);
+    });
+  </script>
+</body>
+</html>

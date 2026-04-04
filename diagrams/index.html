@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="zh-cn" class="">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Architecture Diagrams — Eltria</title>
+  <meta name="description" content="System architecture diagrams and design documentation.">
+  <script src="/assets/js/theme.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { darkMode: 'class' }</script>
+  <link rel="stylesheet" href="/assets/css/global.css">
+</head>
+<body class="bg-white dark:bg-gray-950 text-gray-800 dark:text-gray-200 antialiased">
+
+  <script type="module">
+    import { initNav } from '/assets/js/nav.js';
+    initNav();
+  </script>
+
+  <div class="max-w-4xl mx-auto px-6 py-16">
+    <h1 class="text-2xl font-bold mb-2">Architecture Diagrams</h1>
+    <p class="text-sm text-gray-500 dark:text-gray-400 mb-10">System architecture & design documentation.</p>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+      <a href="/diagrams/news-morning-brief/" class="group block p-5 rounded-xl border border-gray-100 dark:border-gray-800 hover:border-blue-200 dark:hover:border-blue-900 hover:bg-gray-50 dark:hover:bg-gray-900 transition-all no-underline">
+        <div class="text-2xl mb-2">📰</div>
+        <div class="text-sm font-semibold text-gray-800 dark:text-gray-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 mb-1">News Morning Brief</div>
+        <div class="text-xs text-gray-400 dark:text-gray-500">System architecture for automated news briefing service.</div>
+      </a>
+
+    </div>
+
+    <!-- How to add -->
+    <div class="mt-16 pt-8 border-t border-gray-100 dark:border-gray-800">
+      <p class="text-xs text-gray-400 dark:text-gray-600">
+        To add a new diagram: create <code class="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded">diagrams/{name}/index.html</code> and add a card above.
+      </p>
+    </div>
+  </div>
+
+</body>
+</html>

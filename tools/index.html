@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="zh-cn" class="">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tools — Eltria</title>
+  <meta name="description" content="Developer utility tools — JSON formatter, Base64, URL encoder, timestamp converter, regex tester, text diff, JWT decoder, markdown preview, hash generator, color picker and more.">
+  <script src="/assets/js/theme.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { darkMode: 'class' }</script>
+  <link rel="stylesheet" href="/assets/css/global.css">
+</head>
+<body class="bg-white dark:bg-gray-950 text-gray-800 dark:text-gray-200 antialiased">
+
+  <script type="module">
+    import { initNav } from '/assets/js/nav.js';
+    initNav();
+  </script>
+
+  <div class="max-w-4xl mx-auto px-6 py-16">
+    <h1 class="text-2xl font-bold mb-2">Developer Tools</h1>
+    <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">All tools run client-side. No data is sent to any server.</p>
+
+    <!-- Search -->
+    <div class="mb-8">
+      <input id="search" type="text" class="w-full px-4 py-3 text-sm bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500" placeholder="Search tools..." spellcheck="false" autofocus>
+    </div>
+
+    <div id="grid" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+      <a href="/tools/clipboard/" class="tool-card group block p-5 rounded-xl border border-blue-100 dark:border-blue-900 hover:border-blue-200 dark:hover:border-blue-800 hover:bg-blue-50 dark:hover:bg-blue-950/30 transition-all no-underline" data-keywords="clipboard copy paste share remote sync device cross firebase realtime">
+        <div class="text-2xl mb-2">📋</div>
+        <div class="text-sm font-semibold text-gray-800 dark:text-gray-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 mb-1">Remote Clipboard</div>
+        <div class="text-xs text-gray-400 dark:text-gray-500">Share text between devices in real-time with a room code.</div>
+      </a>
+
+      <a href="/tools/json-formatter/" class="tool-card group block p-5 rounded-xl border border-gray-100 dark:border-gray-800 hover:border-blue-200 dark:hover:border-blue-900 hover:bg-gray-50 dark:hover:bg-gray-900 transition-all no-underline" data-keywords="json format validate minify tree">
+        <div class="text-2xl mb-2">{ }</div>
+        <div class="text-sm font-semibold text-gray-800 dark:text-gray-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 mb-1">JSON Formatter</div>
+        <div class="text-xs text-gray-400 dark:text-gray-500">Format, validate, minify, and explore JSON with tree view.</div>
+      </a>
+
+      <a href="/tools/base64/" class="tool-card group block p-5 rounded-xl border border-gray-100 dark:border-gray-800 hover:border-blue-200 dark:hover:border-blue-900 hover:bg-gray-50 dark:hover:bg-gray-900 transition-all no-underline" data-keywords="base64 encode decode">
+        <div class="text-2xl mb-2 font-mono">B64</div>
+        <div class="text-sm font-semibold text-gray-800 dark:text-gray-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 mb-1">Base64</div>
+        <div class="text-xs text-gray-400 dark:text-gray-500">Encode and decode Base64 strings.</div>
+      </a>
+
+      <a href="/tools/url-encoder/" class="tool-card group block p-5 rounded-xl border border-gray-100 dark:border-gray-800 hover:border-blue-200 dark:hover:border-blue-900 hover:bg-gray-50 dark:hover:bg-gray-900 transition-all no-underline" data-keywords="url encode decode uri component percent">
+        <div class="text-2xl mb-2 font-mono">%</div>
+        <div class="text-sm font-semibold text-gray-800 dark:text-gray-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 mb-1">URL Encoder</div>
+        <div class="text-xs text-gray-400 dark:text-gray-500">Encode and decode URL components.</div>
+      </a>
+
+      <a href="/tools/timestamp/" class="tool-card group block p-5 rounded-xl border border-gray-100 dark:border-gray-800 hover:border-blue-200 dark:hover:border-blue-900 hover:bg-gray-50 dark:hover:bg-gray-900 transition-all no-underline" data-keywords="timestamp unix epoch date time convert">
+        <div class="text-2xl mb-2">T</div>
+        <div class="text-sm font-semibold text-gray-800 dark:text-gray-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 mb-1">Timestamp</div>
+        <div class="text-xs text-gray-400 dark:text-gray-500">Convert between Unix timestamps and human-readable dates.</div>
+      </a>
+
+      <a href="/tools/regex/" class="tool-card group block p-5 rounded-xl border border-gray-100 dark:border-gray-800 hover:border-blue-200 dark:hover:border-blue-900 hover:bg-gray-50 dark:hover:bg-gray-900 transition-all no-underline" data-keywords="regex regular expression pattern match capture group test">
+        <div class="text-2xl mb-2 font-mono">.*</div>
+        <div class="text-sm font-semibold text-gray-800 dark:text-gray-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 mb-1">Regex Tester</div>
+        <div class="text-xs text-gray-400 dark:text-gray-500">Test regex with real-time matching, highlighting, and capture groups.</div>
+      </a>
+
+      <a href="/tools/diff/" class="tool-card group block p-5 rounded-xl border border-gray-100 dark:border-gray-800 hover:border-blue-200 dark:hover:border-blue-900 hover:bg-gray-50 dark:hover:bg-gray-900 transition-all no-underline" data-keywords="diff compare text difference change">
+        <div class="text-2xl mb-2">+/-</div>
+        <div class="text-sm font-semibold text-gray-800 dark:text-gray-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 mb-1">Text Diff</div>
+        <div class="text-xs text-gray-400 dark:text-gray-500">Compare two texts and see differences highlighted.</div>
+      </a>
+
+      <a href="/tools/jwt-decoder/" class="tool-card group block p-5 rounded-xl border border-gray-100 dark:border-gray-800 hover:border-blue-200 dark:hover:border-blue-900 hover:bg-gray-50 dark:hover:bg-gray-900 transition-all no-underline" data-keywords="jwt json web token decode header payload signature expiry">
+        <div class="text-2xl mb-2 font-mono">JWT</div>
+        <div class="text-sm font-semibold text-gray-800 dark:text-gray-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 mb-1">JWT Decoder</div>
+        <div class="text-xs text-gray-400 dark:text-gray-500">Decode and inspect JWT tokens — header, payload, expiry check.</div>
+      </a>
+
+      <a href="/tools/markdown/" class="tool-card group block p-5 rounded-xl border border-gray-100 dark:border-gray-800 hover:border-blue-200 dark:hover:border-blue-900 hover:bg-gray-50 dark:hover:bg-gray-900 transition-all no-underline" data-keywords="markdown preview mermaid katex math diagram gfm">
+        <div class="text-2xl mb-2">M</div>
+        <div class="text-sm font-semibold text-gray-800 dark:text-gray-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 mb-1">Markdown Preview</div>
+        <div class="text-xs text-gray-400 dark:text-gray-500">Live preview with Mermaid diagrams, KaTeX math, and syntax highlighting.</div>
+      </a>
+
+      <a href="/tools/hash/" class="tool-card group block p-5 rounded-xl border border-gray-100 dark:border-gray-800 hover:border-blue-200 dark:hover:border-blue-900 hover:bg-gray-50 dark:hover:bg-gray-900 transition-all no-underline" data-keywords="hash sha256 sha384 sha512 sha1 md5 digest checksum file">
+        <div class="text-2xl mb-2">#</div>
+        <div class="text-sm font-semibold text-gray-800 dark:text-gray-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 mb-1">Hash Generator</div>
+        <div class="text-xs text-gray-400 dark:text-gray-500">SHA-256, SHA-384, SHA-512, SHA-1 — text and file hashing.</div>
+      </a>
+
+      <a href="/tools/color-picker/" class="tool-card group block p-5 rounded-xl border border-gray-100 dark:border-gray-800 hover:border-blue-200 dark:hover:border-blue-900 hover:bg-gray-50 dark:hover:bg-gray-900 transition-all no-underline" data-keywords="color pick hex rgb hsl convert palette">
+        <div class="text-2xl mb-2">C</div>
+        <div class="text-sm font-semibold text-gray-800 dark:text-gray-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 mb-1">Color Picker</div>
+        <div class="text-xs text-gray-400 dark:text-gray-500">Pick colors and convert between HEX, RGB, and HSL.</div>
+      </a>
+
+    </div>
+
+    <div id="no-results" class="hidden text-center py-12 text-sm text-gray-400">No tools match your search.</div>
+  </div>
+
+  <script>
+    const search = document.getElementById('search');
+    const cards = document.querySelectorAll('.tool-card');
+    const noResults = document.getElementById('no-results');
+
+    search.addEventListener('input', () => {
+      const q = search.value.toLowerCase().trim();
+      let visible = 0;
+      cards.forEach(card => {
+        const text = (card.textContent + ' ' + card.dataset.keywords).toLowerCase();
+        const show = !q || q.split(/\s+/).every(word => text.includes(word));
+        card.style.display = show ? '' : 'none';
+        if (show) visible++;
+      });
+      noResults.classList.toggle('hidden', visible > 0);
+    });
+  </script>
+</body>
+</html>

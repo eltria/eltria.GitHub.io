@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="zh-cn" class="">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Regex Tester — Eltria</title>
+  <meta name="description" content="Test regular expressions with real-time matching, highlighting, and capture groups.">
+  <script src="/assets/js/theme.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { darkMode: 'class' }</script>
+  <link rel="stylesheet" href="/assets/css/global.css">
+</head>
+<body class="bg-white dark:bg-gray-950 text-gray-800 dark:text-gray-200 antialiased">
+
+  <script type="module">
+    import { initNav } from '/assets/js/nav.js';
+    initNav();
+  </script>
+
+  <div class="max-w-4xl mx-auto px-6 py-16">
+    <div class="mb-6">
+      <a href="/tools/" class="text-xs text-gray-400 hover:text-blue-500 no-underline">← Tools</a>
+    </div>
+    <h1 class="text-2xl font-bold mb-6">Regex Tester</h1>
+
+    <!-- Pattern -->
+    <div class="mb-4">
+      <label class="block text-xs font-medium text-gray-400 mb-2">Pattern</label>
+      <div class="flex gap-2">
+        <div class="flex-1 flex items-center bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-blue-500/30 focus-within:border-blue-500">
+          <span class="pl-4 text-gray-400 font-mono text-sm">/</span>
+          <input id="pattern" type="text" class="flex-1 px-1 py-3 text-sm bg-transparent focus:outline-none font-mono" placeholder="enter regex..." spellcheck="false">
+          <span class="text-gray-400 font-mono text-sm">/</span>
+          <input id="flags" type="text" value="gm" class="w-12 px-1 py-3 text-sm bg-transparent focus:outline-none font-mono text-blue-500" spellcheck="false">
+        </div>
+      </div>
+    </div>
+
+    <!-- Flags -->
+    <div class="flex flex-wrap gap-3 mb-6 text-xs">
+      <label class="flex items-center gap-1.5 cursor-pointer"><input type="checkbox" data-flag="g" checked class="flag-cb rounded"> <span class="text-gray-500">global (g)</span></label>
+      <label class="flex items-center gap-1.5 cursor-pointer"><input type="checkbox" data-flag="m" checked class="flag-cb rounded"> <span class="text-gray-500">multiline (m)</span></label>
+      <label class="flex items-center gap-1.5 cursor-pointer"><input type="checkbox" data-flag="i" class="flag-cb rounded"> <span class="text-gray-500">case-insensitive (i)</span></label>
+      <label class="flex items-center gap-1.5 cursor-pointer"><input type="checkbox" data-flag="s" class="flag-cb rounded"> <span class="text-gray-500">dotAll (s)</span></label>
+      <label class="flex items-center gap-1.5 cursor-pointer"><input type="checkbox" data-flag="u" class="flag-cb rounded"> <span class="text-gray-500">unicode (u)</span></label>
+    </div>
+
+    <!-- Test string -->
+    <div class="mb-4">
+      <label class="block text-xs font-medium text-gray-400 mb-2">Test String</label>
+      <textarea id="test-input" class="tool-textarea w-full h-40 p-4 text-sm bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500" placeholder="Enter text to test against..." spellcheck="false"></textarea>
+    </div>
+
+    <!-- Highlighted result -->
+    <div class="mb-6">
+      <label class="block text-xs font-medium text-gray-400 mb-2">Matches</label>
+      <div id="highlight" class="w-full min-h-[10rem] p-4 text-sm bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl font-mono whitespace-pre-wrap break-all leading-relaxed"></div>
+    </div>
+
+    <!-- Match info -->
+    <div id="match-info" class="mb-4 text-xs text-gray-500"></div>
+
+    <!-- Capture groups -->
+    <div id="groups-section" class="hidden">
+      <label class="block text-xs font-medium text-gray-400 mb-2">Capture Groups</label>
+      <div id="groups" class="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4 text-sm font-mono space-y-2 max-h-64 overflow-auto"></div>
+    </div>
+
+    <!-- Status -->
+    <div id="status" class="mt-3 text-xs h-5 text-red-500"></div>
+  </div>
+
+  <script>
+    const patternEl = document.getElementById('pattern');
+    const flagsEl = document.getElementById('flags');
+    const testEl = document.getElementById('test-input');
+    const highlightEl = document.getElementById('highlight');
+    const matchInfo = document.getElementById('match-info');
+    const groupsSection = document.getElementById('groups-section');
+    const groupsEl = document.getElementById('groups');
+    const statusEl = document.getElementById('status');
+
+    const colors = [
+      ['bg-yellow-200 dark:bg-yellow-900/60', 'text-yellow-900 dark:text-yellow-200'],
+      ['bg-green-200 dark:bg-green-900/60', 'text-green-900 dark:text-green-200'],
+      ['bg-blue-200 dark:bg-blue-900/60', 'text-blue-900 dark:text-blue-200'],
+      ['bg-pink-200 dark:bg-pink-900/60', 'text-pink-900 dark:text-pink-200'],
+      ['bg-purple-200 dark:bg-purple-900/60', 'text-purple-900 dark:text-purple-200'],
+    ];
+
+    function syncFlags() {
+      let f = '';
+      document.querySelectorAll('.flag-cb').forEach(cb => {
+        if (cb.checked) f += cb.dataset.flag;
+      });
+      flagsEl.value = f;
+      run();
+    }
+
+    document.querySelectorAll('.flag-cb').forEach(cb => cb.addEventListener('change', syncFlags));
+
+    flagsEl.addEventListener('input', () => {
+      const f = flagsEl.value;
+      document.querySelectorAll('.flag-cb').forEach(cb => {
+        cb.checked = f.includes(cb.dataset.flag);
+      });
+      run();
+    });
+
+    patternEl.addEventListener('input', run);
+    testEl.addEventListener('input', run);
+
+    function escapeHtml(s) {
+      return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    function run() {
+      const src = patternEl.value;
+      const flags = flagsEl.value;
+      const text = testEl.value;
+      statusEl.textContent = '';
+
+      if (!src) {
+        highlightEl.innerHTML = escapeHtml(text);
+        matchInfo.textContent = '';
+        groupsSection.classList.add('hidden');
+        return;
+      }
+
+      let re;
+      try {
+        re = new RegExp(src, flags);
+      } catch (e) {
+        statusEl.textContent = e.message;
+        highlightEl.innerHTML = escapeHtml(text);
+        matchInfo.textContent = '';
+        groupsSection.classList.add('hidden');
+        return;
+      }
+
+      if (!text) {
+        highlightEl.innerHTML = '';
+        matchInfo.textContent = '';
+        groupsSection.classList.add('hidden');
+        return;
+      }
+
+      const matches = [];
+      let m;
+      const isGlobal = flags.includes('g');
+
+      if (isGlobal) {
+        while ((m = re.exec(text)) !== null) {
+          matches.push({ index: m.index, length: m[0].length, match: m[0], groups: [...m].slice(1), namedGroups: m.groups });
+          if (m[0].length === 0) re.lastIndex++;
+        }
+      } else {
+        m = re.exec(text);
+        if (m) {
+          matches.push({ index: m.index, length: m[0].length, match: m[0], groups: [...m].slice(1), namedGroups: m.groups });
+        }
+      }
+
+      // Build highlighted HTML
+      let html = '';
+      let last = 0;
+      matches.forEach((match, i) => {
+        const ci = i % colors.length;
+        html += escapeHtml(text.slice(last, match.index));
+        html += `<span class="rounded px-0.5 ${colors[ci][0]} ${colors[ci][1]}">${escapeHtml(match.match)}</span>`;
+        last = match.index + match.length;
+      });
+      html += escapeHtml(text.slice(last));
+      highlightEl.innerHTML = html || escapeHtml(text);
+
+      matchInfo.textContent = `${matches.length} match${matches.length !== 1 ? 'es' : ''} found`;
+
+      // Capture groups
+      const hasGroups = matches.some(m => m.groups.length > 0);
+      if (hasGroups) {
+        groupsSection.classList.remove('hidden');
+        groupsEl.innerHTML = matches.map((match, i) => {
+          const ci = i % colors.length;
+          let rows = `<div class="font-semibold ${colors[ci][1]}">Match ${i + 1}: "${escapeHtml(match.match)}"</div>`;
+          match.groups.forEach((g, gi) => {
+            const name = match.namedGroups ? Object.entries(match.namedGroups).find(([, v]) => v === g)?.[0] : null;
+            const label = name ? `${name} (Group ${gi + 1})` : `Group ${gi + 1}`;
+            rows += `<div class="ml-4"><span class="text-gray-400">${label}:</span> ${g !== undefined ? `"${escapeHtml(g)}"` : '<span class="text-gray-400">undefined</span>'}</div>`;
+          });
+          return rows;
+        }).join('<div class="border-t border-gray-200 dark:border-gray-800 my-2"></div>');
+      } else {
+        groupsSection.classList.add('hidden');
+      }
+    }
+
+    // Initial run
+    run();
+  </script>
+</body>
+</html>
