@@ -427,7 +427,8 @@ async function initDashboard(){
 
   // Weather
   try{
-    const w=await GET('/layeros/weather/cache');
+    let w=await GET('/layeros/weather/cache');
+    if(w?.forecasts)w=w.forecasts;
     const today=w?.[0];
     document.getElementById('dash-weather').innerHTML=today?`<div class="section-title">🌤 今日天气</div><div class="flex items-center gap-4"><div class="text-3xl font-bold">${today.tempMin}° ~ ${today.tempMax}°</div><div class="text-xs text-gray-400"><div>${today.condition}</div><div>湿度 ${today.humidity}% · 风速 ${today.windSpeed}m/s</div><div>体感 ${today.realFeelMin}° ~ ${today.realFeelMax}°</div></div></div>`:'<div class="section-title">🌤 天气</div><div class="text-xs text-gray-400">暂无缓存</div>';
   }catch(e){document.getElementById('dash-weather').innerHTML='<div class="section-title">🌤 今日天气</div><div class="text-xs text-red-500">'+e.message+'</div>'}
@@ -672,7 +673,8 @@ async function initLayerOS(){await Promise.all([loadWeather(),loadOutfit(),loadG
 async function loadWeather(){
   loading('weather-cards');
   try{
-    const d=await GET('/layeros/weather/cache')||await GET('/layeros/weather');
+    let d=await GET('/layeros/weather/cache')||await GET('/layeros/weather');
+    if(d?.forecasts)d=d.forecasts;
     if(!d?.length){document.getElementById('weather-cards').innerHTML='<div class="text-xs text-gray-400">暂无天气数据</div>';return}
     document.getElementById('weather-cards').innerHTML=d.map(w=>`
       <div class="card weather-card shrink-0">
@@ -688,7 +690,7 @@ async function loadWeather(){
   }catch(e){document.getElementById('weather-cards').innerHTML=`<div class="text-xs text-red-500">${e.message}</div>`}
 }
 
-window.weatherRefresh=async function(){try{await POST('/layeros/weather/refresh');toast('刷新中...');setTimeout(loadWeather,2000)}catch(e){toast(e.message,false)}};
+window.weatherRefresh=async function(){try{await POST('/layeros/weather/refresh');toast('天气已刷新');loadWeather()}catch(e){toast(e.message,false)}};
 
 async function loadOutfit(){
   loading('outfit-cards');
