@@ -1446,7 +1446,7 @@ async function nLoadPool(){
 window.nLoadMetrics=async function(){
   loading('n-metrics-content');
   try{
-    const d=await rssApi('/metrics');
+    const d=await rssApi('/rss-stats');
     document.getElementById('n-metrics-content').innerHTML=`
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <div class="card stat-card"><div class="stat-num">${(d.total_requests||0).toLocaleString()}</div><div class="stat-label">Total Requests</div></div>
