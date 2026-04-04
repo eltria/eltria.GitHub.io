@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="zh-cn" class="">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Life-Style API — Eltria</title>
+  <meta name="description" content="Life-Style API client for testing and calling endpoints.">
+  <script src="/assets/js/theme.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { darkMode: 'class' }</script>
+  <link rel="stylesheet" href="/assets/css/global.css">
+  <style>
+    .method-get { color: #22c55e; }
+    .method-post { color: #3b82f6; }
+    .method-put { color: #f59e0b; }
+    .method-delete { color: #ef4444; }
+    .method-patch { color: #a855f7; }
+    .method-badge { font-size: 10px; font-weight: 700; padding: 1px 5px; border-radius: 4px; font-family: monospace; }
+    .method-badge.get { background: #22c55e20; color: #22c55e; }
+    .method-badge.post { background: #3b82f620; color: #3b82f6; }
+    .method-badge.put { background: #f59e0b20; color: #f59e0b; }
+    .method-badge.delete { background: #ef444420; color: #ef4444; }
+    .method-badge.patch { background: #a855f720; color: #a855f7; }
+    .endpoint-item { cursor: pointer; transition: background 0.15s; }
+    .endpoint-item:hover { background: rgba(59,130,246,0.06); }
+    .endpoint-item.active { background: rgba(59,130,246,0.1); border-right: 2px solid #3b82f6; }
+    .sidebar::-webkit-scrollbar { width: 4px; }
+    .sidebar::-webkit-scrollbar-thumb { background: rgba(127,127,127,0.3); border-radius: 2px; }
+    .json-key { color: #3b82f6; }
+    .json-string { color: #22c55e; }
+    .json-number { color: #f59e0b; }
+    .json-boolean { color: #a855f7; }
+    .json-null { color: #6b7280; }
+    .dark .json-key { color: #60a5fa; }
+    .dark .json-string { color: #4ade80; }
+    .dark .json-number { color: #fbbf24; }
+    .dark .json-boolean { color: #c084fc; }
+  </style>
+</head>
+<body class="bg-white dark:bg-gray-950 text-gray-800 dark:text-gray-200 antialiased">
+
+  <script type="module">
+    import { initNav } from '/assets/js/nav.js';
+    initNav();
+  </script>
+
+  <!-- Password Gate -->
+  <div id="auth-gate" class="min-h-screen flex items-center justify-center">
+    <div class="w-full max-w-sm px-6">
+      <h1 class="text-xl font-bold text-center mb-6">Life-Style API</h1>
+      <p class="text-sm text-gray-400 text-center mb-6">Enter password to access</p>
+      <div class="flex gap-2">
+        <input id="auth-password" type="password" class="flex-1 px-4 py-2.5 text-sm bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500" placeholder="Password" autofocus>
+        <button id="auth-submit" class="px-5 py-2.5 text-sm font-medium bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors">Enter</button>
+      </div>
+      <p id="auth-error" class="text-xs text-red-500 mt-2 hidden">Incorrect password</p>
+    </div>
+  </div>
+
+  <!-- Main App (hidden until authenticated) -->
+  <div id="main-app" class="hidden">
+    <div class="flex" style="height: calc(100vh - 48px);">
+      <!-- Sidebar -->
+      <div class="sidebar w-72 shrink-0 border-r border-gray-200 dark:border-gray-800 flex flex-col overflow-hidden">
+        <!-- Settings -->
+        <div class="p-3 border-b border-gray-200 dark:border-gray-800">
+          <div class="text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wider">Settings</div>
+          <div class="space-y-2">
+            <div>
+              <label class="text-[10px] text-gray-400 block mb-0.5">Base URL</label>
+              <select id="base-url-select" class="w-full px-2 py-1.5 text-xs bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg focus:outline-none">
+                <option value="https://life-style-wgsx.onrender.com/api/v1">Production</option>
+                <option value="http://localhost:8080/api/v1">Local</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-[10px] text-gray-400 block mb-0.5">Bearer Token</label>
+              <input id="bearer-token" type="password" class="w-full px-2 py-1.5 text-xs bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg focus:outline-none" placeholder="ls_...">
+            </div>
+          </div>
+        </div>
+        <!-- Endpoints list -->
+        <div class="flex-1 overflow-auto py-1" id="endpoints-list"></div>
+      </div>
+
+      <!-- Main content -->
+      <div class="flex-1 min-w-0 flex flex-col overflow-auto">
+        <!-- Empty state -->
+        <div id="empty-state" class="flex-1 flex items-center justify-center">
+          <div class="text-center">
+            <p class="text-gray-400 text-sm">Select an endpoint from the sidebar</p>
+          </div>
+        </div>
+
+        <!-- Endpoint detail -->
+        <div id="endpoint-detail" class="hidden flex-1 flex flex-col overflow-auto">
+          <div class="p-6 space-y-4">
+            <!-- Endpoint header -->
+            <div>
+              <div class="flex items-center gap-2 mb-1">
+                <span id="detail-method" class="method-badge"></span>
+                <code id="detail-path" class="text-sm font-mono text-gray-700 dark:text-gray-300"></code>
+              </div>
+              <p id="detail-desc" class="text-xs text-gray-400"></p>
+            </div>
+
+            <!-- Path params -->
+            <div id="path-params-section" class="hidden">
+              <label class="text-xs font-semibold text-gray-500 block mb-2">Path Parameters</label>
+              <div id="path-params" class="space-y-2"></div>
+            </div>
+
+            <!-- Query params -->
+            <div id="query-params-section" class="hidden">
+              <label class="text-xs font-semibold text-gray-500 block mb-2">Query Parameters</label>
+              <div id="query-params" class="space-y-2"></div>
+            </div>
+
+            <!-- Body -->
+            <div id="body-section" class="hidden">
+              <label class="text-xs font-semibold text-gray-500 block mb-2">Request Body</label>
+              <textarea id="body-editor" class="w-full p-3 text-xs font-mono bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/30 resize-y" rows="10" spellcheck="false"></textarea>
+            </div>
+
+            <!-- Send button -->
+            <div class="flex items-center gap-3">
+              <button id="send-btn" class="px-5 py-2 text-sm font-medium bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                Send Request
+              </button>
+              <span id="response-time" class="text-xs text-gray-400 hidden"></span>
+            </div>
+
+            <!-- Response -->
+            <div id="response-section" class="hidden">
+              <div class="flex items-center gap-2 mb-2">
+                <label class="text-xs font-semibold text-gray-500">Response</label>
+                <span id="response-status" class="text-xs font-mono px-2 py-0.5 rounded"></span>
+              </div>
+              <pre id="response-body" class="w-full p-4 text-xs font-mono bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl overflow-auto max-h-[60vh] leading-relaxed"></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ─── Password Gate ───
+    const PASS_HASH = '4c10cf42edcc563079f07288eafa6395f357cf07620067b8f43ef325a2b282b8';
+
+    async function sha256(text) {
+      const data = new TextEncoder().encode(text);
+      const hash = await crypto.subtle.digest('SHA-256', data);
+      return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    async function checkAuth() {
+      if (sessionStorage.getItem('ls-api-auth') === 'ok') {
+        showApp();
+        return;
+      }
+      document.getElementById('auth-gate').classList.remove('hidden');
+    }
+
+    async function tryAuth() {
+      const pw = document.getElementById('auth-password').value;
+      const hash = await sha256(pw);
+      if (hash === PASS_HASH) {
+        sessionStorage.setItem('ls-api-auth', 'ok');
+        showApp();
+      } else {
+        document.getElementById('auth-error').classList.remove('hidden');
+        document.getElementById('auth-password').value = '';
+        document.getElementById('auth-password').focus();
+      }
+    }
+
+    function showApp() {
+      document.getElementById('auth-gate').classList.add('hidden');
+      document.getElementById('main-app').classList.remove('hidden');
+      initApp();
+    }
+
+    document.getElementById('auth-submit').addEventListener('click', tryAuth);
+    document.getElementById('auth-password').addEventListener('keydown', e => {
+      if (e.key === 'Enter') tryAuth();
+    });
+
+    // ─── API Endpoints Registry ───
+    const ENDPOINTS = [
+      // Todo
+      { module: 'Todo', name: '列出待办', method: 'GET', path: '/todos', desc: '获取所有待办事项' },
+      { module: 'Todo', name: '创建待办', method: 'POST', path: '/todos', desc: '创建新待办事项', body: { title: '买菜', description: '去超市买西红柿和鸡蛋', priority: 1, dueDate: '2026-03-10T18:00:00Z', categoryId: null, tags: ['日常'] } },
+      { module: 'Todo', name: '今日待办', method: 'GET', path: '/todos/today', desc: '返回今日截止的待办' },
+      { module: 'Todo', name: '即将到期', method: 'GET', path: '/todos/upcoming', desc: '7天内到期且pending的待办' },
+      { module: 'Todo', name: '已完成', method: 'GET', path: '/todos/completed', desc: '已完成的待办列表' },
+      { module: 'Todo', name: '待处理', method: 'GET', path: '/todos/pending', desc: '状态为pending的待办' },
+      { module: 'Todo', name: '搜索待办', method: 'GET', path: '/todos/search', desc: '搜索待办', query: [{ name: 'q', desc: '搜索关键词', required: true }] },
+      { module: 'Todo', name: '更新待办', method: 'PUT', path: '/todos/:id', desc: '更新待办信息', body: { title: '', description: '', priority: 1, status: 0 } },
+      { module: 'Todo', name: '删除待办', method: 'DELETE', path: '/todos/:id', desc: '删除待办' },
+      { module: 'Todo', name: '完成待办', method: 'POST', path: '/todos/:id/complete', desc: '标记待办为已完成' },
+
+      // Category
+      { module: 'Category', name: '列出分类', method: 'GET', path: '/categories', desc: '获取所有分类' },
+      { module: 'Category', name: '创建分类', method: 'POST', path: '/categories', desc: '创建新分类', body: { name: '健身', color: '#ef4444', icon: '💪' } },
+      { module: 'Category', name: '更新分类', method: 'PUT', path: '/categories/:id', desc: '更新分类', body: { name: '', color: '', icon: '' } },
+      { module: 'Category', name: '删除分类', method: 'DELETE', path: '/categories/:id', desc: '删除分类' },
+      { module: 'Category', name: '分类下的待办', method: 'GET', path: '/categories/:id/todos', desc: '获取分类下的待办列表' },
+
+      // NLP
+      { module: 'NLP', name: '解析自然语言', method: 'POST', path: '/nlp/parse', desc: '将自然语言解析为结构化待办命令', body: { input: '明天下午三点提醒我去开会' } },
+      { module: 'NLP', name: '执行解析结果', method: 'POST', path: '/nlp/execute', desc: '执行/nlp/parse返回的解析结果', body: { action: 'create', title: '', priority: 1, dueDate: '' } },
+
+      // Knowledge
+      { module: 'Knowledge', name: '列出知识条目', method: 'GET', path: '/knowledge', desc: '分页获取知识条目', query: [{ name: 'page', desc: '页码', required: false }, { name: 'pageSize', desc: '每页数量', required: false }] },
+      { module: 'Knowledge', name: '创建知识条目', method: 'POST', path: '/knowledge', desc: '创建知识条目，AI自动提取标题摘要', body: { content: '知识内容...', tags: ['标签'] } },
+      { module: 'Knowledge', name: '获取知识条目', method: 'GET', path: '/knowledge/:id', desc: '获取知识条目详情' },
+      { module: 'Knowledge', name: '更新知识条目', method: 'PUT', path: '/knowledge/:id', desc: '更新知识条目', body: { title: '', content: '', summary: '', tags: [] } },
+      { module: 'Knowledge', name: '删除知识条目', method: 'DELETE', path: '/knowledge/:id', desc: '删除知识条目及embedding' },
+      { module: 'Knowledge', name: '搜索知识', method: 'GET', path: '/knowledge/search', desc: '搜索知识条目', query: [{ name: 'q', desc: '搜索关键词', required: true }] },
+      { module: 'Knowledge', name: '获取统计', method: 'GET', path: '/knowledge/stats', desc: '知识库统计' },
+      { module: 'Knowledge', name: '标签列表', method: 'GET', path: '/knowledge/tags', desc: '所有标签列表' },
+      { module: 'Knowledge', name: '实体列表', method: 'GET', path: '/knowledge/entities', desc: '所有实体列表' },
+      { module: 'Knowledge', name: '知识图谱', method: 'GET', path: '/knowledge/graph', desc: '获取知识图谱' },
+
+      // Chat
+      { module: 'Chat', name: '创建会话', method: 'POST', path: '/knowledge/chat/sessions', desc: '创建新对话会话' },
+      { module: 'Chat', name: '列出会话', method: 'GET', path: '/knowledge/chat/sessions', desc: '获取所有会话' },
+      { module: 'Chat', name: '会话详情', method: 'GET', path: '/knowledge/chat/sessions/:id', desc: '获取会话详情含消息' },
+      { module: 'Chat', name: '删除会话', method: 'DELETE', path: '/knowledge/chat/sessions/:id', desc: '删除会话' },
+      { module: 'Chat', name: '提问/添加知识', method: 'POST', path: '/knowledge/chat/sessions/:id/ask', desc: '提问或添加知识(id=0自动创建会话)', body: { question: 'Go 的 channel 有什么特点？' } },
+
+      // LayerOS
+      { module: 'LayerOS', name: '列出服装', method: 'GET', path: '/layeros/gears', desc: '获取所有服装' },
+      { module: 'LayerOS', name: '添加服装', method: 'POST', path: '/layeros/gears', desc: '添加服装，AI自动估算CLO值', body: { name: '优衣库 AIRism T恤', brand: '优衣库', description: '轻薄透气的基础层T恤', layer: 'L1_Base' } },
+      { module: 'LayerOS', name: '自然语言添加', method: 'POST', path: '/layeros/gears/chat', desc: '通过自然语言描述添加服装', body: { input: '我有一件始祖鸟的 Beta LT 冲锋衣，GORE-TEX 面料，防风防水' } },
+      { module: 'LayerOS', name: '更新服装', method: 'PUT', path: '/layeros/gears/:id', desc: '更新服装信息', body: { name: '', brand: '', layer: '' } },
+      { module: 'LayerOS', name: '删除服装', method: 'DELETE', path: '/layeros/gears/:id', desc: '删除服装' },
+      { module: 'LayerOS', name: '清空服装', method: 'DELETE', path: '/layeros/gears', desc: '清空所有服装' },
+      { module: 'LayerOS', name: '天气预报', method: 'GET', path: '/layeros/weather', desc: '获取天气预报' },
+      { module: 'LayerOS', name: '详细天气', method: 'GET', path: '/layeros/weather/detailed', desc: '含多源数据和合并过程' },
+      { module: 'LayerOS', name: '缓存天气', method: 'GET', path: '/layeros/weather/cache', desc: '返回上次获取的天气数据' },
+      { module: 'LayerOS', name: '缓存时间', method: 'GET', path: '/layeros/weather/cache-time', desc: '获取天气缓存时间' },
+      { module: 'LayerOS', name: '刷新天气', method: 'POST', path: '/layeros/weather/refresh', desc: '强制重新获取天气数据' },
+      { module: 'LayerOS', name: '缓存穿搭', method: 'GET', path: '/layeros/outfit/cache', desc: '获取缓存穿搭推荐' },
+      { module: 'LayerOS', name: '穿搭推荐', method: 'GET', path: '/layeros/outfit/recommendation', desc: 'AI根据天气和服装生成穿搭建议' },
+
+      // Wardrobe
+      { module: 'Wardrobe', name: '列出平面图', method: 'GET', path: '/wardrobe/floorplans', desc: '获取所有平面图' },
+      { module: 'Wardrobe', name: '创建平面图', method: 'POST', path: '/wardrobe/floorplans', desc: '创建平面图', body: { name: '卧室', description: '主卧衣柜布局', width: 800, height: 600 } },
+      { module: 'Wardrobe', name: '默认平面图', method: 'GET', path: '/wardrobe/floorplans/default', desc: '获取默认平面图含衣柜列表' },
+      { module: 'Wardrobe', name: '更新平面图', method: 'PUT', path: '/wardrobe/floorplans/:id', desc: '更新平面图', body: { name: '', description: '' } },
+      { module: 'Wardrobe', name: '删除平面图', method: 'DELETE', path: '/wardrobe/floorplans/:id', desc: '删除平面图及关联数据' },
+      { module: 'Wardrobe', name: '设为默认', method: 'POST', path: '/wardrobe/floorplans/:id/default', desc: '设为默认平面图' },
+      { module: 'Wardrobe', name: '创建衣柜', method: 'POST', path: '/wardrobe/wardrobes', desc: '创建衣柜', body: { floorPlanId: 1, name: '大衣柜', positionX: 100, positionY: 50, iconType: 'wardrobe', color: '#3b82f6' } },
+      { module: 'Wardrobe', name: '获取衣柜', method: 'GET', path: '/wardrobe/wardrobes/:id', desc: '获取衣柜含衣物列表' },
+      { module: 'Wardrobe', name: '更新衣柜', method: 'PUT', path: '/wardrobe/wardrobes/:id', desc: '更新衣柜信息', body: { name: '', color: '' } },
+      { module: 'Wardrobe', name: '更新位置', method: 'PATCH', path: '/wardrobe/wardrobes/:id/position', desc: '更新衣柜位置', body: { x: 200, y: 100 } },
+      { module: 'Wardrobe', name: '删除衣柜', method: 'DELETE', path: '/wardrobe/wardrobes/:id', desc: '删除衣柜及衣物' },
+      { module: 'Wardrobe', name: '获取衣物', method: 'GET', path: '/wardrobe/clothing/:id', desc: '获取衣物详情' },
+      { module: 'Wardrobe', name: '更新衣物', method: 'PUT', path: '/wardrobe/clothing/:id', desc: '更新衣物', body: { name: '', category: '', color: '', season: 'all' } },
+      { module: 'Wardrobe', name: '删除衣物', method: 'DELETE', path: '/wardrobe/clothing/:id', desc: '删除衣物' },
+      { module: 'Wardrobe', name: '搜索衣物', method: 'GET', path: '/wardrobe/clothing/search', desc: '搜索衣物', query: [{ name: 'q', desc: '搜索关键词', required: true }, { name: 'limit', desc: '数量上限', required: false }] },
+      { module: 'Wardrobe', name: '移动衣物', method: 'POST', path: '/wardrobe/clothing/:id/move', desc: '移动衣物到其他衣柜', body: { target_wardrobe_id: 2 } },
+      { module: 'Wardrobe', name: '自然语言移动', method: 'POST', path: '/wardrobe/clothing/move-nl', desc: '自然语言移动衣物', body: { command: '把蓝色牛仔裤移到鞋柜' } },
+      { module: 'Wardrobe', name: '衣柜统计', method: 'GET', path: '/wardrobe/stats', desc: '衣柜统计信息' },
+
+      // BillSplit
+      { module: 'BillSplit', name: '快捷分账', method: 'POST', path: '/billsplit/quick-split', desc: '自然语言一步分账，无状态', body: { input: '昨天火锅1200 土豆3大1小 新鲜2大 康康2大2小' } },
+      { module: 'BillSplit', name: '列出群组', method: 'GET', path: '/billsplit/groups', desc: '获取所有分账群组' },
+      { module: 'BillSplit', name: '创建群组', method: 'POST', path: '/billsplit/groups', desc: '创建分账群组', body: { name: '周末聚餐群', description: '每周末聚餐的分账' } },
+      { module: 'BillSplit', name: '群组详情', method: 'GET', path: '/billsplit/groups/:id', desc: '获取群组详情' },
+      { module: 'BillSplit', name: '更新群组', method: 'PUT', path: '/billsplit/groups/:id', desc: '更新群组', body: { name: '', description: '' } },
+      { module: 'BillSplit', name: '删除群组', method: 'DELETE', path: '/billsplit/groups/:id', desc: '删除群组及关联数据' },
+      { module: 'BillSplit', name: '添加家庭', method: 'POST', path: '/billsplit/groups/:id/families', desc: '添加家庭到群组', body: { name: '张家', color: '#3b82f6' } },
+      { module: 'BillSplit', name: '更新家庭', method: 'PUT', path: '/billsplit/families/:id', desc: '更新家庭信息', body: { name: '', color: '' } },
+      { module: 'BillSplit', name: '删除家庭', method: 'DELETE', path: '/billsplit/families/:id', desc: '删除家庭' },
+      { module: 'BillSplit', name: '列出账单', method: 'GET', path: '/billsplit/groups/:id/bills', desc: '获取群组账单列表', query: [{ name: 'page', desc: '页码', required: false }, { name: 'pageSize', desc: '每页数量', required: false }] },
+      { module: 'BillSplit', name: '创建账单', method: 'POST', path: '/billsplit/groups/:id/bills', desc: '创建账单', body: { title: '火锅聚餐', totalAmount: 580, billDate: '2026-03-08', participants: [{ familyId: 1, adultCount: 2, childCount: 1 }] } },
+      { module: 'BillSplit', name: '批量创建账单', method: 'POST', path: '/billsplit/groups/:id/bills/batch', desc: '批量创建账单', body: [{ title: '', totalAmount: 0, participants: [] }] },
+      { module: 'BillSplit', name: 'NLP解析账单', method: 'POST', path: '/billsplit/groups/:id/bills/parse', desc: '自然语言解析账单', body: { input: '上周六张家2大1小、李家2大一起吃了海底捞，花了580块' } },
+      { module: 'BillSplit', name: '从解析创建', method: 'POST', path: '/billsplit/groups/:id/bills/from-parsed', desc: '从NLP解析结果创建账单', body: { bills: [], confidence: 0, message: '' } },
+      { module: 'BillSplit', name: '账单详情', method: 'GET', path: '/billsplit/bills/:id', desc: '获取账单详情' },
+      { module: 'BillSplit', name: '更新账单', method: 'PUT', path: '/billsplit/bills/:id', desc: '更新账单', body: { title: '', totalAmount: 0, participants: [] } },
+      { module: 'BillSplit', name: '删除账单', method: 'DELETE', path: '/billsplit/bills/:id', desc: '删除账单' },
+
+      // FoodMap
+      { module: 'FoodMap', name: '列出商场', method: 'GET', path: '/foodmap/malls', desc: '获取所有商场', query: [{ name: 'page', desc: '页码', required: false }, { name: 'pageSize', desc: '每页数量', required: false }] },
+      { module: 'FoodMap', name: '地图范围查询', method: 'GET', path: '/foodmap/malls/bounds', desc: '按地图范围查询商场', query: [{ name: 'northLat', desc: '北纬', required: true }, { name: 'southLat', desc: '南纬', required: true }, { name: 'eastLng', desc: '东经', required: true }, { name: 'westLng', desc: '西经', required: true }] },
+      { module: 'FoodMap', name: '按区域查询', method: 'GET', path: '/foodmap/malls/district/:district', desc: '按区域查询商场' },
+      { module: 'FoodMap', name: '商场详情', method: 'GET', path: '/foodmap/malls/:id', desc: '获取商场详情' },
+      { module: 'FoodMap', name: '商场餐厅', method: 'GET', path: '/foodmap/malls/:id/restaurants', desc: '获取商场餐厅列表', query: [{ name: 'category', desc: '分类', required: false }, { name: 'minPrice', desc: '最低价', required: false }, { name: 'maxPrice', desc: '最高价', required: false }, { name: 'minRating', desc: '最低评分', required: false }, { name: 'search', desc: '搜索', required: false }, { name: 'page', desc: '页码', required: false }, { name: 'pageSize', desc: '每页数量', required: false }] },
+      { module: 'FoodMap', name: '标记核心', method: 'POST', path: '/foodmap/malls/:id/core', desc: '标记为核心商场' },
+      { module: 'FoodMap', name: '取消核心', method: 'DELETE', path: '/foodmap/malls/:id/core', desc: '取消核心商场标记' },
+      { module: 'FoodMap', name: '更新停车', method: 'PUT', path: '/foodmap/malls/:id/parking', desc: '更新停车信息', body: { hasZeekrCharger: true, chargingFreeParking: true, freeParking: false, freeParkingNote: '消费满200免2小时' } },
+      { module: 'FoodMap', name: '区域列表', method: 'GET', path: '/foodmap/districts', desc: '获取区域列表' },
+      { module: 'FoodMap', name: '餐厅分类', method: 'GET', path: '/foodmap/categories', desc: '获取餐厅分类列表' },
+      { module: 'FoodMap', name: '统计', method: 'GET', path: '/foodmap/stats', desc: '美食地图统计' },
+      { module: 'FoodMap', name: '核心关键词', method: 'GET', path: '/foodmap/core-keywords', desc: '核心商场关键词' },
+      { module: 'FoodMap', name: '测试API Key', method: 'POST', path: '/foodmap/sync/test-key', desc: '测试高德API Key' },
+      { module: 'FoodMap', name: '测试同步', method: 'POST', path: '/foodmap/sync/test-mall', desc: '测试单个商场同步' },
+      { module: 'FoodMap', name: '核心同步', method: 'POST', path: '/foodmap/sync/core', desc: '核心商场同步(异步)' },
+      { module: 'FoodMap', name: '增量同步', method: 'POST', path: '/foodmap/sync/incremental', desc: '增量同步(>7天的)' },
+      { module: 'FoodMap', name: '全量同步', method: 'POST', path: '/foodmap/sync/full', desc: '重置后全量同步' },
+      { module: 'FoodMap', name: '自动同步', method: 'POST', path: '/foodmap/sync/auto', desc: '智能判断是否需要同步' },
+      { module: 'FoodMap', name: '同步任务历史', method: 'GET', path: '/foodmap/sync/tasks', desc: '获取同步任务历史' },
+      { module: 'FoodMap', name: '列出收藏', method: 'GET', path: '/foodmap/favorites', desc: '获取收藏列表' },
+      { module: 'FoodMap', name: '添加收藏', method: 'POST', path: '/foodmap/favorites', desc: '添加餐厅收藏', body: { restaurant_id: 1, note: '味道很好', rating: 5 } },
+      { module: 'FoodMap', name: '删除收藏', method: 'DELETE', path: '/foodmap/favorites/:id', desc: '删除收藏' },
+
+      // Config
+      { module: 'Config', name: '获取配置', method: 'GET', path: '/config', desc: '获取系统配置' },
+      { module: 'Config', name: '更新API Key', method: 'PUT', path: '/config/api-key', desc: '更新Claude API Key', body: { api_key: 'sk-ant-...' } },
+      { module: 'Config', name: '更新API配置', method: 'PUT', path: '/config/api-config', desc: '更新Claude API配置', body: { api_key: '', base_url: '', model: '' } },
+      { module: 'Config', name: '更新主题', method: 'PUT', path: '/config/theme', desc: '更新主题', body: { theme: 'dark' } },
+      { module: 'Config', name: '更新Embedding', method: 'PUT', path: '/config/embedding', desc: '更新Embedding配置', body: { provider: 'openai', api_key: '', base_url: '', model: 'text-embedding-3-small' } },
+      { module: 'Config', name: '更新高德Key', method: 'PUT', path: '/config/amap-key', desc: '更新高德API Key', body: { api_key: '' } },
+      { module: 'Config', name: '更新火山引擎', method: 'PUT', path: '/config/volcengine', desc: '更新火山引擎ASR配置', body: { app_id: '', access_token: '' } },
+
+      // LLM
+      { module: 'LLM', name: '获取状态', method: 'GET', path: '/llm/status', desc: 'LLM状态和配置' },
+      { module: 'LLM', name: '探测LLM', method: 'POST', path: '/llm/probe', desc: '测试所有LLM连通性' },
+      { module: 'LLM', name: '探测Provider', method: 'POST', path: '/llm/probe/:name', desc: '测试指定Provider连通性' },
+      { module: 'LLM', name: '添加Fallback', method: 'POST', path: '/llm/fallback', desc: '添加Fallback Provider', body: { name: 'doubao', api_key: '', base_url: '', model: '', protocol: 'openai' } },
+      { module: 'LLM', name: '删除Fallback', method: 'DELETE', path: '/llm/fallback/:name', desc: '删除Fallback Provider' },
+
+      // SSE
+      { module: 'SSE', name: '天气进度', method: 'GET', path: '/events/weather', desc: '天气刷新SSE进度流' },
+      { module: 'SSE', name: '同步进度', method: 'GET', path: '/events/foodmap/sync', desc: 'FoodMap同步SSE进度流' },
+      { module: 'SSE', name: '导入进度', method: 'GET', path: '/events/foodmap/import', desc: 'FoodMap截图导入SSE进度流' },
+    ];
+
+    // ─── App Logic ───
+    let currentEndpoint = null;
+
+    function initApp() {
+      // Restore settings
+      const savedUrl = localStorage.getItem('ls-api-base-url');
+      const savedToken = localStorage.getItem('ls-api-token');
+      if (savedUrl) document.getElementById('base-url-select').value = savedUrl;
+      if (savedToken) document.getElementById('bearer-token').value = savedToken;
+
+      // Save on change
+      document.getElementById('base-url-select').addEventListener('change', e => localStorage.setItem('ls-api-base-url', e.target.value));
+      document.getElementById('bearer-token').addEventListener('input', e => localStorage.setItem('ls-api-token', e.target.value));
+
+      renderSidebar();
+      document.getElementById('send-btn').addEventListener('click', sendRequest);
+    }
+
+    function renderSidebar() {
+      const list = document.getElementById('endpoints-list');
+      const modules = {};
+      ENDPOINTS.forEach((ep, idx) => {
+        if (!modules[ep.module]) modules[ep.module] = [];
+        modules[ep.module].push({ ...ep, idx });
+      });
+
+      let html = '';
+      for (const [mod, eps] of Object.entries(modules)) {
+        html += `<div class="module-group">
+          <button class="w-full flex items-center justify-between px-3 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors" onclick="toggleModule(this)">
+            <span>${mod}</span>
+            <svg class="w-3 h-3 transform transition-transform rotate-0 module-arrow" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+          </button>
+          <div class="module-endpoints hidden">`;
+        for (const ep of eps) {
+          html += `<div class="endpoint-item flex items-center gap-2 px-3 py-1.5 text-xs" data-idx="${ep.idx}" onclick="selectEndpoint(${ep.idx})">
+            <span class="method-badge ${ep.method.toLowerCase()}">${ep.method}</span>
+            <span class="text-gray-600 dark:text-gray-400 truncate">${ep.name}</span>
+          </div>`;
+        }
+        html += `</div></div>`;
+      }
+      list.innerHTML = html;
+    }
+
+    window.toggleModule = function(btn) {
+      const eps = btn.nextElementSibling;
+      const arrow = btn.querySelector('.module-arrow');
+      eps.classList.toggle('hidden');
+      arrow.classList.toggle('rotate-180');
+    };
+
+    window.selectEndpoint = function(idx) {
+      currentEndpoint = ENDPOINTS[idx];
+
+      // Update active state
+      document.querySelectorAll('.endpoint-item').forEach(el => el.classList.remove('active'));
+      document.querySelector(`[data-idx="${idx}"]`)?.classList.add('active');
+
+      // Show detail
+      document.getElementById('empty-state').classList.add('hidden');
+      const detail = document.getElementById('endpoint-detail');
+      detail.classList.remove('hidden');
+
+      const ep = currentEndpoint;
+      const methodEl = document.getElementById('detail-method');
+      methodEl.textContent = ep.method;
+      methodEl.className = `method-badge ${ep.method.toLowerCase()}`;
+      document.getElementById('detail-path').textContent = `/api/v1${ep.path}`;
+      document.getElementById('detail-desc').textContent = ep.desc;
+
+      // Path params
+      const pathParams = (ep.path.match(/:(\w+)/g) || []).map(p => p.slice(1));
+      const ppSection = document.getElementById('path-params-section');
+      const ppContainer = document.getElementById('path-params');
+      if (pathParams.length) {
+        ppSection.classList.remove('hidden');
+        ppContainer.innerHTML = pathParams.map(p => `
+          <div class="flex items-center gap-2">
+            <label class="text-xs text-gray-500 w-24 shrink-0 font-mono">:${p}</label>
+            <input type="text" class="path-param flex-1 px-2 py-1.5 text-xs bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg focus:outline-none" data-param="${p}" placeholder="Enter ${p}">
+          </div>
+        `).join('');
+      } else {
+        ppSection.classList.add('hidden');
+      }
+
+      // Query params
+      const qpSection = document.getElementById('query-params-section');
+      const qpContainer = document.getElementById('query-params');
+      if (ep.query?.length) {
+        qpSection.classList.remove('hidden');
+        qpContainer.innerHTML = ep.query.map(q => `
+          <div class="flex items-center gap-2">
+            <label class="text-xs text-gray-500 w-24 shrink-0 font-mono">${q.name}${q.required ? '*' : ''}</label>
+            <input type="text" class="query-param flex-1 px-2 py-1.5 text-xs bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg focus:outline-none" data-param="${q.name}" placeholder="${q.desc}">
+          </div>
+        `).join('');
+      } else {
+        qpSection.classList.add('hidden');
+      }
+
+      // Body
+      const bodySection = document.getElementById('body-section');
+      if (ep.body !== undefined) {
+        bodySection.classList.remove('hidden');
+        document.getElementById('body-editor').value = JSON.stringify(ep.body, null, 2);
+      } else {
+        bodySection.classList.add('hidden');
+      }
+
+      // Clear response
+      document.getElementById('response-section').classList.add('hidden');
+      document.getElementById('response-time').classList.add('hidden');
+    };
+
+    function syntaxHighlight(json) {
+      if (typeof json !== 'string') json = JSON.stringify(json, null, 2);
+      return json
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/("(\\u[\da-fA-F]{4}|\\[^u]|[^\\"])*"(\s*:)?)/g, (match) => {
+          if (/:$/.test(match)) return `<span class="json-key">${match}</span>`;
+          return `<span class="json-string">${match}</span>`;
+        })
+        .replace(/\b(-?\d+\.?\d*([eE][+-]?\d+)?)\b/g, '<span class="json-number">$1</span>')
+        .replace(/\b(true|false)\b/g, '<span class="json-boolean">$1</span>')
+        .replace(/\bnull\b/g, '<span class="json-null">null</span>');
+    }
+
+    async function sendRequest() {
+      if (!currentEndpoint) return;
+      const ep = currentEndpoint;
+      const baseUrl = document.getElementById('base-url-select').value;
+      const token = document.getElementById('bearer-token').value;
+
+      // Build URL
+      let path = ep.path;
+      document.querySelectorAll('.path-param').forEach(input => {
+        path = path.replace(`:${input.dataset.param}`, encodeURIComponent(input.value));
+      });
+
+      // Query params
+      const queryParts = [];
+      document.querySelectorAll('.query-param').forEach(input => {
+        if (input.value) queryParts.push(`${input.dataset.param}=${encodeURIComponent(input.value)}`);
+      });
+      const queryString = queryParts.length ? '?' + queryParts.join('&') : '';
+      const url = `${baseUrl}${path}${queryString}`;
+
+      // Headers
+      const headers = {};
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
+      // Body
+      const options = { method: ep.method, headers };
+      if (ep.body !== undefined && ['POST', 'PUT', 'PATCH'].includes(ep.method)) {
+        headers['Content-Type'] = 'application/json';
+        options.body = document.getElementById('body-editor').value;
+      }
+
+      // Send
+      const btn = document.getElementById('send-btn');
+      btn.disabled = true;
+      btn.textContent = 'Sending...';
+
+      const start = performance.now();
+      try {
+        const res = await fetch(url, options);
+        const elapsed = Math.round(performance.now() - start);
+
+        let data;
+        const contentType = res.headers.get('content-type') || '';
+        if (contentType.includes('json')) {
+          data = await res.json();
+        } else {
+          data = await res.text();
+        }
+
+        // Show response
+        document.getElementById('response-section').classList.remove('hidden');
+        const statusEl = document.getElementById('response-status');
+        statusEl.textContent = `${res.status} ${res.statusText}`;
+        statusEl.className = `text-xs font-mono px-2 py-0.5 rounded ${res.ok ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'}`;
+
+        const timeEl = document.getElementById('response-time');
+        timeEl.textContent = `${elapsed}ms`;
+        timeEl.classList.remove('hidden');
+
+        const bodyEl = document.getElementById('response-body');
+        if (typeof data === 'object') {
+          bodyEl.innerHTML = syntaxHighlight(data);
+        } else {
+          bodyEl.textContent = data;
+        }
+      } catch (err) {
+        document.getElementById('response-section').classList.remove('hidden');
+        const statusEl = document.getElementById('response-status');
+        statusEl.textContent = 'Error';
+        statusEl.className = 'text-xs font-mono px-2 py-0.5 rounded bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400';
+        document.getElementById('response-body').textContent = err.message;
+        document.getElementById('response-time').classList.add('hidden');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Send Request';
+      }
+    }
+
+    // Init
+    checkAuth();
+  </script>
+</body>
+</html>

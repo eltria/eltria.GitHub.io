@@ -22,6 +22,7 @@ export const TOOLS = [
   { name: 'CSS Playground', icon: '▦', path: '/tools/css-playground/', keywords: 'css flexbox grid layout visual' },
   { name: 'Pastebin', icon: '📄', path: '/tools/pastebin/', keywords: 'paste share code snippet gist' },
   { name: 'Poll', icon: '📊', path: '/tools/poll/', keywords: 'poll vote survey question' },
+  { name: 'Life-Style API', icon: 'API', path: '/tools/life-style-api/', keywords: 'life style api rest todo wardrobe food billsplit knowledge chat layeros' },
 ];
 
 const PAGES = [
