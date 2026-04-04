@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="zh-cn" class="">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QR Code Generator — Eltria</title>
+  <meta name="description" content="Generate QR codes from text or URLs. Download as PNG.">
+  <script src="/assets/js/theme.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { darkMode: 'class' }</script>
+  <link rel="stylesheet" href="/assets/css/global.css">
+  <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+</head>
+<body class="bg-white dark:bg-gray-950 text-gray-800 dark:text-gray-200 antialiased">
+  <script type="module">import { initNav } from '/assets/js/nav.js'; initNav();</script>
+
+  <div class="max-w-3xl mx-auto px-6 py-16">
+    <div class="mb-6"><a href="/tools/" class="text-xs text-gray-400 hover:text-blue-500 no-underline">← Tools</a></div>
+    <h1 class="text-2xl font-bold mb-6">QR Code Generator</h1>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <!-- Input -->
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-gray-400 mb-2">Content</label>
+          <textarea id="content" class="tool-textarea w-full h-32 p-4 text-sm bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500" placeholder="Enter text or URL..." spellcheck="false">https://eltria.github.io</textarea>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-medium text-gray-400 mb-2">Size</label>
+            <select id="cell-size" class="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg">
+              <option value="4">Small (4px)</option>
+              <option value="6" selected>Medium (6px)</option>
+              <option value="8">Large (8px)</option>
+              <option value="12">XL (12px)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-400 mb-2">Error Correction</label>
+            <select id="ec-level" class="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg">
+              <option value="L">Low (7%)</option>
+              <option value="M" selected>Medium (15%)</option>
+              <option value="Q">Quartile (25%)</option>
+              <option value="H">High (30%)</option>
+            </select>
+          </div>
+        </div>
+        <button onclick="downloadPNG()" class="w-full px-4 py-2 text-xs font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">Download PNG</button>
+      </div>
+
+      <!-- Preview -->
+      <div class="flex flex-col items-center">
+        <label class="block text-xs font-medium text-gray-400 mb-2 self-start">Preview</label>
+        <div id="qr-output" class="bg-white p-4 rounded-xl border border-gray-200 dark:border-gray-800 inline-block"></div>
+        <div id="qr-info" class="mt-2 text-xs text-gray-400"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const content = document.getElementById('content');
+    const cellSize = document.getElementById('cell-size');
+    const ecLevel = document.getElementById('ec-level');
+    const output = document.getElementById('qr-output');
+    const info = document.getElementById('qr-info');
+
+    function generate() {
+      const text = content.value;
+      if (!text) { output.innerHTML = ''; info.textContent = ''; return; }
+      try {
+        const ecMap = { L: 1, M: 0, Q: 3, H: 2 };
+        const qr = qrcode(0, ecMap[ecLevel.value] || 0);
+        qr.addData(text);
+        qr.make();
+        const size = parseInt(cellSize.value);
+        output.innerHTML = qr.createImgTag(size, 0);
+        const modules = qr.getModuleCount();
+        info.textContent = `${modules}×${modules} modules, ${modules * size}px`;
+      } catch (e) {
+        output.innerHTML = `<span class="text-red-500 text-xs">Error: ${e.message || 'Data too long'}</span>`;
+      }
+    }
+
+    function downloadPNG() {
+      const img = output.querySelector('img');
+      if (!img) return;
+      const canvas = document.createElement('canvas');
+      canvas.width = img.naturalWidth || img.width;
+      canvas.height = img.naturalHeight || img.height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+      const a = document.createElement('a');
+      a.download = 'qrcode.png';
+      a.href = canvas.toDataURL('image/png');
+      a.click();
+    }
+
+    content.addEventListener('input', generate);
+    cellSize.addEventListener('change', generate);
+    ecLevel.addEventListener('change', generate);
+    generate();
+  </script>
+</body>
+</html>

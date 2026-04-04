@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="zh-cn" class="">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HTTP Status Codes — Eltria</title>
+  <meta name="description" content="Quick reference for HTTP status codes with descriptions and common use cases.">
+  <script src="/assets/js/theme.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { darkMode: 'class' }</script>
+  <link rel="stylesheet" href="/assets/css/global.css">
+</head>
+<body class="bg-white dark:bg-gray-950 text-gray-800 dark:text-gray-200 antialiased">
+  <script type="module">import { initNav } from '/assets/js/nav.js'; initNav();</script>
+
+  <div class="max-w-3xl mx-auto px-6 py-16">
+    <div class="mb-6"><a href="/tools/" class="text-xs text-gray-400 hover:text-blue-500 no-underline">← Tools</a></div>
+    <h1 class="text-2xl font-bold mb-6">HTTP Status Codes</h1>
+
+    <div class="mb-8">
+      <input id="search" type="text" class="w-full px-4 py-3 text-sm bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500" placeholder="Search by code, name, or description..." spellcheck="false" autofocus>
+    </div>
+
+    <div id="list" class="space-y-1"></div>
+  </div>
+
+  <script>
+    const codes = [
+      // 1xx
+      { code: 100, name: 'Continue', desc: 'Server received headers, client should proceed with body.', cat: '1xx' },
+      { code: 101, name: 'Switching Protocols', desc: 'Server is switching protocols (e.g., to WebSocket).', cat: '1xx' },
+      // 2xx
+      { code: 200, name: 'OK', desc: 'Request succeeded. Standard response for GET.', cat: '2xx' },
+      { code: 201, name: 'Created', desc: 'Resource created successfully. Common for POST.', cat: '2xx' },
+      { code: 202, name: 'Accepted', desc: 'Request accepted but not yet processed. Used for async operations.', cat: '2xx' },
+      { code: 204, name: 'No Content', desc: 'Success with no response body. Common for DELETE or PUT.', cat: '2xx' },
+      { code: 206, name: 'Partial Content', desc: 'Partial resource returned (range requests, video streaming).', cat: '2xx' },
+      // 3xx
+      { code: 301, name: 'Moved Permanently', desc: 'Resource permanently moved. SEO: use for URL changes.', cat: '3xx' },
+      { code: 302, name: 'Found', desc: 'Temporary redirect. Browser follows with GET.', cat: '3xx' },
+      { code: 304, name: 'Not Modified', desc: 'Cached version is still valid. Saves bandwidth.', cat: '3xx' },
+      { code: 307, name: 'Temporary Redirect', desc: 'Temporary redirect preserving HTTP method.', cat: '3xx' },
+      { code: 308, name: 'Permanent Redirect', desc: 'Permanent redirect preserving HTTP method.', cat: '3xx' },
+      // 4xx
+      { code: 400, name: 'Bad Request', desc: 'Malformed request syntax, invalid parameters.', cat: '4xx' },
+      { code: 401, name: 'Unauthorized', desc: 'Authentication required. Missing or invalid credentials.', cat: '4xx' },
+      { code: 403, name: 'Forbidden', desc: 'Authenticated but not authorized. Insufficient permissions.', cat: '4xx' },
+      { code: 404, name: 'Not Found', desc: 'Resource does not exist at this URL.', cat: '4xx' },
+      { code: 405, name: 'Method Not Allowed', desc: 'HTTP method not supported for this endpoint.', cat: '4xx' },
+      { code: 408, name: 'Request Timeout', desc: 'Server timed out waiting for the request.', cat: '4xx' },
+      { code: 409, name: 'Conflict', desc: 'Conflict with current state. E.g., duplicate resource, version mismatch.', cat: '4xx' },
+      { code: 410, name: 'Gone', desc: 'Resource permanently deleted. Unlike 404, it existed before.', cat: '4xx' },
+      { code: 413, name: 'Payload Too Large', desc: 'Request body exceeds server limit.', cat: '4xx' },
+      { code: 415, name: 'Unsupported Media Type', desc: 'Content-Type not supported by endpoint.', cat: '4xx' },
+      { code: 422, name: 'Unprocessable Entity', desc: 'Syntactically valid but semantically wrong. Common in APIs.', cat: '4xx' },
+      { code: 429, name: 'Too Many Requests', desc: 'Rate limited. Check Retry-After header.', cat: '4xx' },
+      // 5xx
+      { code: 500, name: 'Internal Server Error', desc: 'Unhandled server exception. Generic error.', cat: '5xx' },
+      { code: 502, name: 'Bad Gateway', desc: 'Upstream server returned invalid response. Proxy/LB issue.', cat: '5xx' },
+      { code: 503, name: 'Service Unavailable', desc: 'Server overloaded or in maintenance. Retry later.', cat: '5xx' },
+      { code: 504, name: 'Gateway Timeout', desc: 'Upstream server did not respond in time.', cat: '5xx' },
+    ];
+
+    const catColors = {
+      '1xx': 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400',
+      '2xx': 'bg-green-100 dark:bg-green-950/40 text-green-700 dark:text-green-400',
+      '3xx': 'bg-blue-100 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400',
+      '4xx': 'bg-yellow-100 dark:bg-yellow-950/40 text-yellow-700 dark:text-yellow-400',
+      '5xx': 'bg-red-100 dark:bg-red-950/40 text-red-700 dark:text-red-400',
+    };
+
+    const list = document.getElementById('list');
+    const search = document.getElementById('search');
+
+    function render(items) {
+      let currentCat = '';
+      list.innerHTML = items.map(item => {
+        let catHeader = '';
+        if (item.cat !== currentCat) {
+          currentCat = item.cat;
+          const labels = { '1xx': 'Informational', '2xx': 'Success', '3xx': 'Redirection', '4xx': 'Client Error', '5xx': 'Server Error' };
+          catHeader = `<div class="pt-6 pb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">${item.cat} — ${labels[item.cat]}</div>`;
+        }
+        return `${catHeader}
+          <div class="flex items-start gap-3 px-4 py-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors">
+            <span class="shrink-0 px-2 py-0.5 text-xs font-mono font-bold rounded ${catColors[item.cat]}">${item.code}</span>
+            <div>
+              <div class="text-sm font-medium">${item.name}</div>
+              <div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">${item.desc}</div>
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    search.addEventListener('input', () => {
+      const q = search.value.toLowerCase().trim();
+      const filtered = codes.filter(c => {
+        const text = `${c.code} ${c.name} ${c.desc} ${c.cat}`.toLowerCase();
+        return !q || q.split(/\s+/).every(w => text.includes(w));
+      });
+      render(filtered);
+    });
+
+    render(codes);
+  </script>
+</body>
+</html>

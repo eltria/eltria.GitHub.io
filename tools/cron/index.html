@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="zh-cn" class="">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cron Parser — Eltria</title>
+  <meta name="description" content="Parse cron expressions, see next execution times and human-readable descriptions.">
+  <script src="/assets/js/theme.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { darkMode: 'class' }</script>
+  <link rel="stylesheet" href="/assets/css/global.css">
+</head>
+<body class="bg-white dark:bg-gray-950 text-gray-800 dark:text-gray-200 antialiased">
+  <script type="module">import { initNav } from '/assets/js/nav.js'; initNav();</script>
+
+  <div class="max-w-3xl mx-auto px-6 py-16">
+    <div class="mb-6"><a href="/tools/" class="text-xs text-gray-400 hover:text-blue-500 no-underline">← Tools</a></div>
+    <h1 class="text-2xl font-bold mb-6">Cron Expression Parser</h1>
+
+    <div class="mb-6">
+      <label class="block text-xs font-medium text-gray-400 mb-2">Cron Expression</label>
+      <input id="cron" type="text" value="0 9 * * 1-5" class="w-full px-4 py-3 text-lg font-mono bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 text-center tracking-wider" spellcheck="false">
+    </div>
+
+    <!-- Field labels -->
+    <div class="flex justify-center gap-0 mb-6 font-mono text-[10px] text-gray-400">
+      <div class="w-16 text-center">minute</div>
+      <div class="w-16 text-center">hour</div>
+      <div class="w-16 text-center">day</div>
+      <div class="w-16 text-center">month</div>
+      <div class="w-16 text-center">weekday</div>
+    </div>
+
+    <!-- Presets -->
+    <div class="flex flex-wrap gap-2 mb-8">
+      <button onclick="setExpr('* * * * *')" class="px-3 py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700">Every minute</button>
+      <button onclick="setExpr('0 * * * *')" class="px-3 py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700">Every hour</button>
+      <button onclick="setExpr('0 0 * * *')" class="px-3 py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700">Daily midnight</button>
+      <button onclick="setExpr('0 9 * * 1-5')" class="px-3 py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700">Weekdays 9am</button>
+      <button onclick="setExpr('0 0 1 * *')" class="px-3 py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700">Monthly</button>
+      <button onclick="setExpr('0 0 * * 0')" class="px-3 py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700">Weekly Sunday</button>
+    </div>
+
+    <!-- Description -->
+    <div id="description" class="mb-6 p-4 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900 rounded-xl text-sm text-blue-700 dark:text-blue-300"></div>
+
+    <!-- Next executions -->
+    <div>
+      <label class="block text-xs font-medium text-gray-400 mb-3">Next 10 Executions</label>
+      <div id="next-list" class="space-y-1.5"></div>
+    </div>
+
+    <div id="error" class="mt-4 text-xs text-red-500"></div>
+  </div>
+
+  <script>
+    const cronInput = document.getElementById('cron');
+    const descEl = document.getElementById('description');
+    const nextList = document.getElementById('next-list');
+    const errorEl = document.getElementById('error');
+
+    const MONTHS = ['', 'Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+
+    function setExpr(expr) {
+      cronInput.value = expr;
+      parse();
+    }
+
+    function parse() {
+      const expr = cronInput.value.trim();
+      errorEl.textContent = '';
+      try {
+        const parts = expr.split(/\s+/);
+        if (parts.length < 5 || parts.length > 6) throw new Error('Expected 5 fields: minute hour day month weekday');
+
+        const [minP, hourP, domP, monP, dowP] = parts;
+        const min = parseField(minP, 0, 59);
+        const hour = parseField(hourP, 0, 23);
+        const dom = parseField(domP, 1, 31);
+        const mon = parseField(monP, 1, 12);
+        const dow = parseField(dowP, 0, 7).map(d => d === 7 ? 0 : d); // normalize Sunday
+
+        // Description
+        descEl.textContent = describeExpr(minP, hourP, domP, monP, dowP);
+
+        // Compute next 10
+        const results = [];
+        const now = new Date();
+        let cursor = new Date(now);
+        cursor.setSeconds(0, 0);
+
+        for (let i = 0; i < 10 && results.length < 10; i++) {
+          cursor = new Date(cursor.getTime() + 60000); // advance 1 min
+          const found = findNext(cursor, min, hour, dom, mon, dow);
+          if (!found) break;
+          results.push(new Date(found));
+          cursor = found;
+        }
+
+        nextList.innerHTML = results.map((d, i) => {
+          const rel = relativeTime(d);
+          return `<div class="flex items-center justify-between px-4 py-2 rounded-lg ${i === 0 ? 'bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-300' : 'text-gray-600 dark:text-gray-400'}">
+            <span class="text-sm font-mono">${d.toLocaleString('zh-CN')}</span>
+            <span class="text-xs">${rel}</span>
+          </div>`;
+        }).join('');
+      } catch (e) {
+        errorEl.textContent = e.message;
+        descEl.textContent = '';
+        nextList.innerHTML = '';
+      }
+    }
+
+    function parseField(field, min, max) {
+      const values = new Set();
+      field.split(',').forEach(part => {
+        let [range, step] = part.split('/');
+        step = step ? parseInt(step) : 1;
+        if (range === '*') { for (let i = min; i <= max; i += step) values.add(i); return; }
+        const m = range.match(/^(\d+)-(\d+)$/);
+        if (m) { for (let i = parseInt(m[1]); i <= parseInt(m[2]); i += step) values.add(i); return; }
+        values.add(parseInt(range));
+      });
+      return [...values].sort((a, b) => a - b);
+    }
+
+    function findNext(start, min, hour, dom, mon, dow) {
+      const d = new Date(start);
+      for (let i = 0; i < 525960; i++) { // max ~1 year of minutes
+        if (mon.includes(d.getMonth() + 1) &&
+            dom.includes(d.getDate()) &&
+            dow.includes(d.getDay()) &&
+            hour.includes(d.getHours()) &&
+            min.includes(d.getMinutes())) {
+          return d;
+        }
+        d.setMinutes(d.getMinutes() + 1);
+      }
+      return null;
+    }
+
+    function describeExpr(minP, hourP, domP, monP, dowP) {
+      let parts = [];
+      if (minP === '*' && hourP === '*') parts.push('Every minute');
+      else if (minP === '0' && hourP === '*') parts.push('Every hour');
+      else if (hourP !== '*' && minP !== '*') parts.push(`At ${hourP}:${minP.padStart(2, '0')}`);
+      else if (minP === '*') parts.push(`Every minute during hour ${hourP}`);
+      else parts.push(`At minute ${minP} of every hour`);
+
+      if (dowP !== '*') {
+        const days = parseField(dowP, 0, 7).map(d => d === 7 ? 0 : d).map(d => DAYS[d]);
+        parts.push(`on ${days.join(', ')}`);
+      }
+      if (domP !== '*') parts.push(`on day ${domP} of the month`);
+      if (monP !== '*') parts.push(`in month ${monP}`);
+      return parts.join(' ');
+    }
+
+    function relativeTime(d) {
+      const diff = (d.getTime() - Date.now()) / 1000;
+      if (diff < 60) return 'in <1m';
+      if (diff < 3600) return `in ${Math.floor(diff / 60)}m`;
+      if (diff < 86400) return `in ${Math.floor(diff / 3600)}h ${Math.floor((diff % 3600) / 60)}m`;
+      return `in ${Math.floor(diff / 86400)}d`;
+    }
+
+    cronInput.addEventListener('input', parse);
+    parse();
+  </script>
+</body>
+</html>

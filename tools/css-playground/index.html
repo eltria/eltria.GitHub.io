@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="zh-cn" class="">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CSS Playground — Eltria</title>
+  <meta name="description" content="Visual CSS Flexbox and Grid playground. Drag parameters and generate CSS code.">
+  <script src="/assets/js/theme.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { darkMode: 'class' }</script>
+  <link rel="stylesheet" href="/assets/css/global.css">
+  <style>
+    .preview-item { padding: 12px 16px; border-radius: 8px; font-size: 12px; font-weight: 600; color: white; text-align: center; min-width: 48px; }
+    .item-colors { background: #3b82f6; }
+    .item-colors:nth-child(2) { background: #8b5cf6; }
+    .item-colors:nth-child(3) { background: #ec4899; }
+    .item-colors:nth-child(4) { background: #f59e0b; }
+    .item-colors:nth-child(5) { background: #10b981; }
+    .item-colors:nth-child(6) { background: #ef4444; }
+  </style>
+</head>
+<body class="bg-white dark:bg-gray-950 text-gray-800 dark:text-gray-200 antialiased">
+  <script type="module">import { initNav } from '/assets/js/nav.js'; initNav();</script>
+
+  <div class="max-w-6xl mx-auto px-6 py-16">
+    <div class="mb-6"><a href="/tools/" class="text-xs text-gray-400 hover:text-blue-500 no-underline">← Tools</a></div>
+    <h1 class="text-2xl font-bold mb-2">CSS Playground</h1>
+
+    <!-- Mode tabs -->
+    <div class="flex gap-2 mb-6">
+      <button onclick="setMode('flex')" id="mode-flex" class="px-4 py-2 text-xs font-medium bg-blue-600 text-white rounded-lg">Flexbox</button>
+      <button onclick="setMode('grid')" id="mode-grid" class="px-4 py-2 text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg">Grid</button>
+      <button onclick="copyCSS()" class="px-4 py-2 text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg ml-auto">Copy CSS</button>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- Controls -->
+      <div class="space-y-4">
+        <!-- Flex controls -->
+        <div id="flex-controls">
+          <h3 class="text-xs font-semibold text-gray-400 mb-3">Container</h3>
+          <div class="space-y-3">
+            <div>
+              <label class="block text-xs text-gray-500 mb-1">flex-direction</label>
+              <select id="flex-direction" class="ctrl w-full px-3 py-1.5 text-xs bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg">
+                <option>row</option><option>row-reverse</option><option>column</option><option>column-reverse</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs text-gray-500 mb-1">justify-content</label>
+              <select id="justify-content" class="ctrl w-full px-3 py-1.5 text-xs bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg">
+                <option>flex-start</option><option>flex-end</option><option>center</option><option>space-between</option><option>space-around</option><option>space-evenly</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs text-gray-500 mb-1">align-items</label>
+              <select id="align-items" class="ctrl w-full px-3 py-1.5 text-xs bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg">
+                <option>stretch</option><option>flex-start</option><option>flex-end</option><option>center</option><option>baseline</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs text-gray-500 mb-1">flex-wrap</label>
+              <select id="flex-wrap" class="ctrl w-full px-3 py-1.5 text-xs bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg">
+                <option>nowrap</option><option>wrap</option><option>wrap-reverse</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs text-gray-500 mb-1">gap</label>
+              <input type="range" id="flex-gap" class="ctrl w-full" min="0" max="32" value="8">
+              <span id="flex-gap-val" class="text-xs text-gray-400">8px</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Grid controls -->
+        <div id="grid-controls" class="hidden">
+          <h3 class="text-xs font-semibold text-gray-400 mb-3">Container</h3>
+          <div class="space-y-3">
+            <div>
+              <label class="block text-xs text-gray-500 mb-1">grid-template-columns</label>
+              <input id="grid-cols" type="text" value="1fr 1fr 1fr" class="ctrl w-full px-3 py-1.5 text-xs bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg font-mono">
+            </div>
+            <div>
+              <label class="block text-xs text-gray-500 mb-1">grid-template-rows</label>
+              <input id="grid-rows" type="text" value="auto" class="ctrl w-full px-3 py-1.5 text-xs bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg font-mono">
+            </div>
+            <div>
+              <label class="block text-xs text-gray-500 mb-1">justify-items</label>
+              <select id="grid-justify" class="ctrl w-full px-3 py-1.5 text-xs bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg">
+                <option>stretch</option><option>start</option><option>end</option><option>center</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs text-gray-500 mb-1">align-items</label>
+              <select id="grid-align" class="ctrl w-full px-3 py-1.5 text-xs bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg">
+                <option>stretch</option><option>start</option><option>end</option><option>center</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs text-gray-500 mb-1">gap</label>
+              <input type="range" id="grid-gap" class="ctrl w-full" min="0" max="32" value="8">
+              <span id="grid-gap-val" class="text-xs text-gray-400">8px</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Item count -->
+        <div>
+          <label class="block text-xs text-gray-500 mb-1">Items: <span id="item-count-val">4</span></label>
+          <input type="range" id="item-count" class="w-full" min="1" max="12" value="4">
+        </div>
+      </div>
+
+      <!-- Preview -->
+      <div class="lg:col-span-2">
+        <label class="block text-xs font-medium text-gray-400 mb-2">Preview</label>
+        <div id="preview" class="w-full min-h-[20rem] p-4 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl"></div>
+
+        <label class="block text-xs font-medium text-gray-400 mt-4 mb-2">Generated CSS</label>
+        <pre id="css-output" class="p-4 text-xs font-mono bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl overflow-auto"></pre>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let mode = 'flex';
+    const preview = document.getElementById('preview');
+    const cssOutput = document.getElementById('css-output');
+
+    function setMode(m) {
+      mode = m;
+      document.getElementById('mode-flex').className = `px-4 py-2 text-xs font-medium rounded-lg ${m === 'flex' ? 'bg-blue-600 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'}`;
+      document.getElementById('mode-grid').className = `px-4 py-2 text-xs font-medium rounded-lg ${m === 'grid' ? 'bg-blue-600 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'}`;
+      document.getElementById('flex-controls').classList.toggle('hidden', m !== 'flex');
+      document.getElementById('grid-controls').classList.toggle('hidden', m !== 'grid');
+      update();
+    }
+
+    function update() {
+      const count = parseInt(document.getElementById('item-count').value);
+      document.getElementById('item-count-val').textContent = count;
+
+      let items = '';
+      for (let i = 1; i <= count; i++) items += `<div class="preview-item item-colors">${i}</div>`;
+
+      let css = '';
+      if (mode === 'flex') {
+        const dir = document.getElementById('flex-direction').value;
+        const jc = document.getElementById('justify-content').value;
+        const ai = document.getElementById('align-items').value;
+        const wrap = document.getElementById('flex-wrap').value;
+        const gap = document.getElementById('flex-gap').value;
+        document.getElementById('flex-gap-val').textContent = gap + 'px';
+
+        preview.style.cssText = `display:flex; flex-direction:${dir}; justify-content:${jc}; align-items:${ai}; flex-wrap:${wrap}; gap:${gap}px; min-height:20rem; padding:16px;`;
+        css = `.container {\n  display: flex;\n  flex-direction: ${dir};\n  justify-content: ${jc};\n  align-items: ${ai};\n  flex-wrap: ${wrap};\n  gap: ${gap}px;\n}`;
+      } else {
+        const cols = document.getElementById('grid-cols').value;
+        const rows = document.getElementById('grid-rows').value;
+        const ji = document.getElementById('grid-justify').value;
+        const ai = document.getElementById('grid-align').value;
+        const gap = document.getElementById('grid-gap').value;
+        document.getElementById('grid-gap-val').textContent = gap + 'px';
+
+        preview.style.cssText = `display:grid; grid-template-columns:${cols}; grid-template-rows:${rows}; justify-items:${ji}; align-items:${ai}; gap:${gap}px; min-height:20rem; padding:16px;`;
+        css = `.container {\n  display: grid;\n  grid-template-columns: ${cols};\n  grid-template-rows: ${rows};\n  justify-items: ${ji};\n  align-items: ${ai};\n  gap: ${gap}px;\n}`;
+      }
+
+      preview.innerHTML = items;
+      cssOutput.textContent = css;
+    }
+
+    function copyCSS() {
+      navigator.clipboard.writeText(cssOutput.textContent);
+    }
+
+    document.querySelectorAll('.ctrl').forEach(el => el.addEventListener('input', update));
+    document.querySelectorAll('.ctrl').forEach(el => el.addEventListener('change', update));
+    document.getElementById('item-count').addEventListener('input', update);
+
+    update();
+  </script>
+</body>
+</html>

@@ -24,8 +24,29 @@
       </div>
 
       <!-- Search -->
-      <div class="mb-10">
-        <input id="search" type="text" class="w-full px-4 py-3 text-sm bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500" placeholder="Search tools & diagrams..." spellcheck="false">
+      <div class="mb-6">
+        <input id="search" type="text" class="w-full px-4 py-3 text-sm bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500" placeholder="Search tools & diagrams...  ⌘K" spellcheck="false">
+      </div>
+
+      <!-- Recent & Favorites (populated by JS) -->
+      <div id="recent-section" class="mb-8 hidden">
+        <h2 class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-3">Recent</h2>
+        <div id="recent-list" class="flex flex-wrap gap-2"></div>
+      </div>
+      <div id="fav-section" class="mb-8 hidden">
+        <h2 class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-3">Favorites</h2>
+        <div id="fav-list" class="flex flex-wrap gap-2"></div>
+      </div>
+
+      <!-- Workspace shortcut -->
+      <div class="mb-8">
+        <a href="/workspace/" class="flex items-center gap-3 px-4 py-3 rounded-xl border border-dashed border-gray-200 dark:border-gray-800 hover:border-blue-300 dark:hover:border-blue-800 hover:bg-blue-50/50 dark:hover:bg-blue-950/20 transition-all no-underline">
+          <span class="text-xl w-8 text-center">▤</span>
+          <div>
+            <div class="text-sm font-medium text-gray-800 dark:text-gray-200">Workspace</div>
+            <div class="text-xs text-gray-400 dark:text-gray-500">Open multiple tools side by side</div>
+          </div>
+        </a>
       </div>
 
       <!-- Tools Section -->
@@ -148,7 +169,9 @@
     </div>
   </div>
 
-  <script>
+  <script type="module">
+    import { TOOLS, getRecent, getFavorites } from '/assets/js/nav.js';
+
     document.getElementById('theme-toggle-home').addEventListener('click', () => {
       document.documentElement.classList.toggle('dark');
       localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
@@ -157,6 +180,25 @@
     // PWA
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js');
+    }
+
+    // Recent
+    const recentTools = getRecent();
+    if (recentTools.length) {
+      document.getElementById('recent-section').classList.remove('hidden');
+      document.getElementById('recent-list').innerHTML = recentTools.map(t =>
+        `<a href="${t.path}" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-950/30 hover:text-blue-600 transition-colors no-underline"><span class="font-mono text-[10px]">${t.icon}</span> ${t.name}</a>`
+      ).join('');
+    }
+
+    // Favorites
+    const favPaths = getFavorites();
+    const favTools = favPaths.map(p => TOOLS.find(t => t.path === p)).filter(Boolean);
+    if (favTools.length) {
+      document.getElementById('fav-section').classList.remove('hidden');
+      document.getElementById('fav-list').innerHTML = favTools.map(t =>
+        `<a href="${t.path}" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-yellow-50 dark:bg-yellow-950/20 text-yellow-700 dark:text-yellow-400 border border-yellow-200 dark:border-yellow-900 rounded-lg hover:bg-yellow-100 dark:hover:bg-yellow-950/40 transition-colors no-underline"><span class="font-mono text-[10px]">${t.icon}</span> ${t.name}</a>`
+      ).join('');
     }
 
     // Search
