@@ -1,124 +1,179 @@
 <!DOCTYPE html>
-<html lang="zh-cn">
+<html lang="zh-cn" class="">
 <head>
-	<meta name="generator" content="Hugo 0.74.3" />
-  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=no"/>
-  <title>我的世界</title>
-  <link href="https://eltria.github.io/css/materialize.min.css" type="text/css" rel="stylesheet" media="screen,projection"/>
-  <link href="https://eltria.github.io/css/style.css" type="text/css" rel="stylesheet" media="screen,projection"/>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.6/styles/default.min.css">
-  <style type="text/css">
-  
-    footer.page-footer{background-image: url(https://eltria.github.io/images/default.png);}
-  
-  </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Eltria — Dev Portal</title>
+  <meta name="description" content="Developer tools, architecture diagrams, and more.">
+  <script src="/assets/js/theme.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { darkMode: 'class' }</script>
+  <link rel="stylesheet" href="/assets/css/global.css">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#3b82f6">
 </head>
-<body>
-  <ul id="slide-out" class="side-nav">
-    <li><a href="https://eltria.github.io"><i class="mdi-action-home left"></i>Home<i class="mdi-hardware-keyboard-arrow-right right"></i></a></li>
-    <li><a href="https://eltria.github.io/categories"><i class="mdi-action-perm-media left"></i>Categories<i class="mdi-hardware-keyboard-arrow-right right"></i></a></li>
-    <li><a href="https://eltria.github.io/tags"><i class="mdi-action-loyalty left"></i>Tags<i class="mdi-hardware-keyboard-arrow-right right"></i></a></li>
-  </ul>
-  <div id="index-banner" class="parallax-container">
-  <a data-activates="slide-out" class="btn-floating button-collapse" style="top: 5px; left: 5px;"><i class="mdi-navigation-menu"></i></a>
-    <div class="section no-pad-bot">
-      <div class="container">
-        
-        <h1 class="header center teal-text text-lighten-2">我的世界</h1>
-        <div class="row center">
-          <h5 class="header col s12 light">Hugo theme even example site.</h5>
-        </div>
-        <div class="row center">
-        
-        
-        
-        
-        
-        
-          <a href="https://eltria.github.io/index.xml"><img src="https://eltria.github.io/images/feed-dreamstale27.png"></a>
+<body class="bg-white dark:bg-gray-950 text-gray-800 dark:text-gray-200 antialiased">
+
+  <div class="min-h-screen flex flex-col items-center justify-center px-6">
+    <div class="max-w-xl w-full">
+
+      <!-- Header -->
+      <div class="mb-12">
+        <h1 class="text-3xl font-bold mb-2">Eltria</h1>
+        <p class="text-gray-500 dark:text-gray-400">Developer tools & architecture diagrams.</p>
+      </div>
+
+      <!-- Search -->
+      <div class="mb-10">
+        <input id="search" type="text" class="w-full px-4 py-3 text-sm bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500" placeholder="Search tools & diagrams..." spellcheck="false">
+      </div>
+
+      <!-- Tools Section -->
+      <div class="mb-10 searchable-section">
+        <h2 class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-4">Tools</h2>
+        <div class="space-y-2">
+          <a href="/tools/clipboard/" class="item group flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-950/30 transition-colors no-underline" data-k="clipboard copy paste share remote sync device">
+            <span class="text-xl w-8 text-center">📋</span>
+            <div>
+              <div class="text-sm font-medium text-gray-800 dark:text-gray-200 group-hover:text-blue-600 dark:group-hover:text-blue-400">Remote Clipboard</div>
+              <div class="text-xs text-gray-400 dark:text-gray-500">Cross-device real-time text sharing</div>
+            </div>
+          </a>
+          <a href="/tools/json-formatter/" class="item group flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors no-underline" data-k="json format validate minify tree">
+            <span class="text-xl w-8 text-center">{ }</span>
+            <div>
+              <div class="text-sm font-medium text-gray-800 dark:text-gray-200 group-hover:text-blue-600 dark:group-hover:text-blue-400">JSON Formatter</div>
+              <div class="text-xs text-gray-400 dark:text-gray-500">Format, validate & view JSON</div>
+            </div>
+          </a>
+          <a href="/tools/regex/" class="item group flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors no-underline" data-k="regex regular expression pattern match test">
+            <span class="text-lg w-8 text-center font-mono">.*</span>
+            <div>
+              <div class="text-sm font-medium text-gray-800 dark:text-gray-200 group-hover:text-blue-600 dark:group-hover:text-blue-400">Regex Tester</div>
+              <div class="text-xs text-gray-400 dark:text-gray-500">Real-time matching & capture groups</div>
+            </div>
+          </a>
+          <a href="/tools/diff/" class="item group flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors no-underline" data-k="diff compare text difference">
+            <span class="text-lg w-8 text-center font-mono">+/-</span>
+            <div>
+              <div class="text-sm font-medium text-gray-800 dark:text-gray-200 group-hover:text-blue-600 dark:group-hover:text-blue-400">Text Diff</div>
+              <div class="text-xs text-gray-400 dark:text-gray-500">Compare texts with highlighted differences</div>
+            </div>
+          </a>
+          <a href="/tools/markdown/" class="item group flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors no-underline" data-k="markdown preview mermaid katex math diagram">
+            <span class="text-xl w-8 text-center font-bold">M</span>
+            <div>
+              <div class="text-sm font-medium text-gray-800 dark:text-gray-200 group-hover:text-blue-600 dark:group-hover:text-blue-400">Markdown Preview</div>
+              <div class="text-xs text-gray-400 dark:text-gray-500">Mermaid + KaTeX + syntax highlight</div>
+            </div>
+          </a>
+          <a href="/tools/jwt-decoder/" class="item group flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors no-underline" data-k="jwt json web token decode header payload">
+            <span class="text-lg w-8 text-center font-mono">JWT</span>
+            <div>
+              <div class="text-sm font-medium text-gray-800 dark:text-gray-200 group-hover:text-blue-600 dark:group-hover:text-blue-400">JWT Decoder</div>
+              <div class="text-xs text-gray-400 dark:text-gray-500">Decode header, payload & check expiry</div>
+            </div>
+          </a>
+          <a href="/tools/base64/" class="item group flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors no-underline" data-k="base64 encode decode">
+            <span class="text-xl w-8 text-center font-mono">B64</span>
+            <div>
+              <div class="text-sm font-medium text-gray-800 dark:text-gray-200 group-hover:text-blue-600 dark:group-hover:text-blue-400">Base64</div>
+              <div class="text-xs text-gray-400 dark:text-gray-500">Encode & decode Base64</div>
+            </div>
+          </a>
+          <a href="/tools/url-encoder/" class="item group flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors no-underline" data-k="url encode decode uri percent">
+            <span class="text-xl w-8 text-center font-mono">%</span>
+            <div>
+              <div class="text-sm font-medium text-gray-800 dark:text-gray-200 group-hover:text-blue-600 dark:group-hover:text-blue-400">URL Encoder</div>
+              <div class="text-xs text-gray-400 dark:text-gray-500">Encode & decode URLs</div>
+            </div>
+          </a>
+          <a href="/tools/timestamp/" class="item group flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors no-underline" data-k="timestamp unix epoch date time convert">
+            <span class="text-xl w-8 text-center">T</span>
+            <div>
+              <div class="text-sm font-medium text-gray-800 dark:text-gray-200 group-hover:text-blue-600 dark:group-hover:text-blue-400">Timestamp</div>
+              <div class="text-xs text-gray-400 dark:text-gray-500">Unix timestamp converter</div>
+            </div>
+          </a>
+          <a href="/tools/hash/" class="item group flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors no-underline" data-k="hash sha256 sha512 sha1 digest checksum">
+            <span class="text-xl w-8 text-center">#</span>
+            <div>
+              <div class="text-sm font-medium text-gray-800 dark:text-gray-200 group-hover:text-blue-600 dark:group-hover:text-blue-400">Hash Generator</div>
+              <div class="text-xs text-gray-400 dark:text-gray-500">SHA-256/384/512 — text & file</div>
+            </div>
+          </a>
+          <a href="/tools/color-picker/" class="item group flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors no-underline" data-k="color pick hex rgb hsl convert palette">
+            <span class="text-xl w-8 text-center">C</span>
+            <div>
+              <div class="text-sm font-medium text-gray-800 dark:text-gray-200 group-hover:text-blue-600 dark:group-hover:text-blue-400">Color Picker</div>
+              <div class="text-xs text-gray-400 dark:text-gray-500">HEX / RGB / HSL converter</div>
+            </div>
+          </a>
+          <a href="/tools/" class="flex items-center gap-3 px-4 py-2 text-xs text-gray-400 dark:text-gray-500 hover:text-blue-500 transition-colors no-underline">
+            View all tools →
+          </a>
         </div>
       </div>
-    </div>
-    <div class="parallax">
-    
-      <img src="https://eltria.github.io/images/default.png">
-    
-    </div>
-  </div>
 
-
-<div class="container">
-  <div class="section">
-
-
-<div class="row">
-
-  
-  <div class="col m4 s12">
-    <div class="card-panel">
-      <h4><a href="https://eltria.github.io/post/build_site/">Github page 建站教程</a></h4>
-      <p>
-       
-      </p>
-      <p>建站 背景 一直想说要弄个博客,但是一直没有机会,今天正好有这个机缘,就在github page上搞了blog这个事情 目前是基于hugo + github pag</p>
-      <p>
-      17 Jul 2020
-       
-      </p>
-    </div>
-  </div>
-
-  
-  <div class="col m4 s12">
-    <div class="card-panel">
-      <h4><a href="https://eltria.github.io/post/first/">First</a></h4>
-      <p>
-       
-      </p>
-      <p>大家好,这是我的第一篇博客!</p>
-      <p>
-      17 Jul 2020
-       
-      </p>
-    </div>
-  </div>
-
-</div>
-
-  
-<div class="row">
-  <div class="col s3 m1">
-  
-    <a class="btn-floating btn-large disabled"><i class="mdi-navigation-arrow-back"></i></a>
-  
-  </div>
-  <div class="col s6 m10 center">&nbsp</div>
-  <div class="col s3 m1">
-  
-    <a class="btn-floating btn-large disabled"><i class="mdi-navigation-arrow-forward"></i></a>
-  
-  </div>
-</div>
-
-
-  </div>
-</div>
-
-  <footer class="page-footer">
-    <div class="footer-copyright">
-      <div class="container">
-      
-      <div class="right">Design <a class="grey-text text-lighten-4" href="http://pdevty.github.io/blog/">pdevty</a></div>
+      <!-- Diagrams Section -->
+      <div class="mb-10 searchable-section">
+        <h2 class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-4">Architecture Diagrams</h2>
+        <div class="space-y-2">
+          <a href="/diagrams/news-morning-brief/" class="item group flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors no-underline" data-k="news morning brief architecture system">
+            <span class="text-xl w-8 text-center">📰</span>
+            <div>
+              <div class="text-sm font-medium text-gray-800 dark:text-gray-200 group-hover:text-blue-600 dark:group-hover:text-blue-400">News Morning Brief</div>
+              <div class="text-xs text-gray-400 dark:text-gray-500">Automated news briefing system architecture</div>
+            </div>
+          </a>
+          <a href="/diagrams/" class="flex items-center gap-3 px-4 py-2 text-xs text-gray-400 dark:text-gray-500 hover:text-blue-500 transition-colors no-underline">
+            View all diagrams →
+          </a>
+        </div>
       </div>
-    </div>
-  </footer>
-  <script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
-  <script src="https://eltria.github.io/js/materialize.min.js"></script>
-  <script src="https://eltria.github.io/js/init.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.6/highlight.min.js"></script>
-  <script>hljs.initHighlightingOnLoad();</script>
-  
 
-  </body>
+      <!-- Footer -->
+      <div class="pt-8 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between">
+        <p class="text-xs text-gray-400 dark:text-gray-600">Powered by GitHub Pages</p>
+        <button id="theme-toggle-home" class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" aria-label="Toggle theme">
+          <svg class="w-4 h-4 hidden dark:block text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
+          </svg>
+          <svg class="w-4 h-4 block dark:hidden text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+          </svg>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('theme-toggle-home').addEventListener('click', () => {
+      document.documentElement.classList.toggle('dark');
+      localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+    });
+
+    // PWA
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js');
+    }
+
+    // Search
+    const search = document.getElementById('search');
+    const items = document.querySelectorAll('.item');
+    const sections = document.querySelectorAll('.searchable-section');
+    search.addEventListener('input', () => {
+      const q = search.value.toLowerCase().trim();
+      items.forEach(item => {
+        const text = (item.textContent + ' ' + (item.dataset.k || '')).toLowerCase();
+        item.style.display = (!q || q.split(/\s+/).every(w => text.includes(w))) ? '' : 'none';
+      });
+      sections.forEach(sec => {
+        const visible = sec.querySelectorAll('.item:not([style*="display: none"])');
+        sec.style.display = (q && visible.length === 0) ? 'none' : '';
+      });
+    });
+  </script>
+</body>
 </html>
