@@ -287,12 +287,13 @@
 
       <!-- ═══ News ═══ -->
       <div id="v-news" class="view">
-        <div class="flex gap-2 mb-4 flex-wrap">
+        <div class="flex gap-2 mb-4 flex-wrap items-center">
           <button class="tab-btn active" data-nt="articles">Articles</button>
           <button class="tab-btn" data-nt="brief">Brief</button>
           <button class="tab-btn" data-nt="briefing">Briefing</button>
           <button class="tab-btn" data-nt="pool">Pool Stats</button>
           <button class="tab-btn" data-nt="metrics">Metrics</button>
+          <button onclick="nToggleReader()" class="btn btn-ghost text-xs ml-auto" id="n-reader-btn" title="全屏阅读模式">📖 阅读模式</button>
         </div>
         <!-- Articles -->
         <div id="n-articles">
@@ -1328,40 +1329,110 @@ function nShowArticleDetail(a){
   `);
 }
 
-// -- Fullscreen Reader --
-window.nOpenReader=function(id){
-  const a=nArticles.find(x=>x.id===id);if(!a)return;
-  const contentHtml=a.content?marked.parse(a.content):(a.summary?`<p>${esc(a.summary)}</p>`:'');
+// -- Fullscreen Reader Mode --
+let readerEscHandler=null;
+function nGetReaderOverlay(){
   let overlay=document.getElementById('reader-overlay');
   if(!overlay){
     overlay=document.createElement('div');
     overlay.id='reader-overlay';
+    overlay.style.cssText='position:fixed;inset:0;z-index:9999;background:var(--card-bg);overflow-y:auto;display:none';
     document.body.appendChild(overlay);
   }
-  overlay.style.cssText='position:fixed;inset:0;z-index:9999;background:var(--card-bg);overflow-y:auto;display:flex;justify-content:center';
+  return overlay;
+}
+
+function nCloseReader(){
+  const overlay=document.getElementById('reader-overlay');
+  if(overlay)overlay.style.display='none';
+  document.getElementById('n-reader-btn').textContent='📖 阅读模式';
+  if(readerEscHandler){document.removeEventListener('keydown',readerEscHandler);readerEscHandler=null}
+}
+
+window.nToggleReader=function(){
+  const overlay=nGetReaderOverlay();
+  if(overlay.style.display!=='none'){nCloseReader();return}
+
+  // Determine active tab
+  const activeTab=document.querySelector('[data-nt].active')?.dataset.nt||'articles';
+  let html='';
+
+  if(activeTab==='articles'){
+    const q=document.getElementById('n-search').value.toLowerCase().trim();
+    const filtered=q?nArticles.filter(a=>(a.title||'').toLowerCase().includes(q)||(a.summary||'').toLowerCase().includes(q)):nArticles;
+    html=filtered.map(a=>{
+      const contentHtml=a.content?marked.parse(a.content):'';
+      return`
+        <article style="margin-bottom:48px;padding-bottom:48px;border-bottom:1px solid var(--card-border)">
+          <h2 style="font-size:24px;font-weight:700;line-height:1.35;margin-bottom:12px">${esc(a.title)}</h2>
+          <div class="flex flex-wrap gap-3 mb-4 text-xs text-gray-400">
+            ${a.category?`<span class="badge" style="background:#dbeafe;color:#2563eb">${esc(a.category)}</span>`:''}
+            ${a.source_name?`<span>${esc(a.source_name)}</span>`:''}
+            ${a.published?`<span>${fmtDateTime(a.published)}</span>`:''}
+            ${a.url?`<a href="${esc(a.url)}" target="_blank" rel="noopener" class="text-blue-500 hover:underline">原文 ↗</a>`:''}
+          </div>
+          ${a.summary?`<div style="font-size:14px;color:#6b7280;line-height:1.7;margin-bottom:16px;padding:14px;background:var(--card-border);border-radius:10px">${esc(a.summary)}</div>`:''}
+          ${contentHtml?`<div class="article-content" style="font-size:15px;line-height:1.85">${contentHtml}</div>`:''}
+        </article>`;
+    }).join('');
+    if(!filtered.length)html='<div class="empty-state">暂无文章</div>';
+
+  }else if(activeTab==='brief'){
+    const digest=document.getElementById('n-brief-digest');
+    const digestText=digest&&!digest.classList.contains('hidden')?`<div style="font-size:15px;color:#2563eb;line-height:1.7;margin-bottom:32px;padding:16px;background:#dbeafe20;border:1px solid #93c5fd40;border-radius:12px">${esc(digest.textContent)}</div>`:'';
+    html=digestText+document.getElementById('n-brief-list').innerHTML;
+
+  }else if(activeTab==='briefing'){
+    html=document.getElementById('n-briefing-content').innerHTML;
+
+  }else if(activeTab==='pool'){
+    html=document.getElementById('n-pool-stats').innerHTML;
+
+  }else if(activeTab==='metrics'){
+    html=document.getElementById('n-metrics-content').innerHTML;
+  }
+
+  overlay.style.display='flex';
+  overlay.style.justifyContent='center';
   overlay.innerHTML=`
-    <div style="width:100%;max-width:720px;padding:40px 24px 80px">
-      <div class="flex items-center justify-between mb-6">
-        <button onclick="document.getElementById('reader-overlay').style.display='none'" class="btn btn-ghost text-xs">← 返回</button>
-        <div class="flex gap-2">
-          ${a.url?`<a href="${esc(a.url)}" target="_blank" rel="noopener" class="btn btn-ghost text-xs">原文 ↗</a>`:''}
-        </div>
+    <div style="width:100%;max-width:720px;padding:32px 24px 80px">
+      <div class="flex items-center justify-between mb-8" style="position:sticky;top:0;z-index:1;background:var(--card-bg);padding:8px 0;border-bottom:1px solid var(--card-border)">
+        <button onclick="nCloseReader()" class="btn btn-ghost text-xs">← 退出阅读</button>
+        <span class="text-xs text-gray-400">${activeTab} · ${activeTab==='articles'?nArticles.length+' articles':''}</span>
+      </div>
+      ${html}
+    </div>
+  `;
+  document.getElementById('n-reader-btn').textContent='✕ 退出阅读';
+  readerEscHandler=e=>{if(e.key==='Escape')nCloseReader()};
+  document.addEventListener('keydown',readerEscHandler);
+};
+
+// Single article reader (from card)
+window.nOpenReader=function(id){
+  const a=nArticles.find(x=>x.id===id);if(!a)return;
+  const contentHtml=a.content?marked.parse(a.content):(a.summary?`<p>${esc(a.summary)}</p>`:'');
+  const overlay=nGetReaderOverlay();
+  overlay.style.display='flex';
+  overlay.style.justifyContent='center';
+  overlay.innerHTML=`
+    <div style="width:100%;max-width:720px;padding:32px 24px 80px">
+      <div class="flex items-center justify-between mb-6" style="position:sticky;top:0;z-index:1;background:var(--card-bg);padding:8px 0;border-bottom:1px solid var(--card-border)">
+        <button onclick="nCloseReader()" class="btn btn-ghost text-xs">← 返回</button>
+        ${a.url?`<a href="${esc(a.url)}" target="_blank" rel="noopener" class="btn btn-ghost text-xs">原文 ↗</a>`:''}
       </div>
       <h1 style="font-size:28px;font-weight:700;line-height:1.35;margin-bottom:16px">${esc(a.title)}</h1>
       <div class="flex flex-wrap gap-3 mb-6 text-xs text-gray-400" style="border-bottom:1px solid var(--card-border);padding-bottom:16px">
         ${a.category?`<span class="badge" style="background:#dbeafe;color:#2563eb">${esc(a.category)}</span>`:''}
         ${a.source_name?`<span>${esc(a.source_name)}</span>`:''}
         ${a.published?`<span>${fmtDateTime(a.published)}</span>`:''}
-        ${a.language?`<span class="uppercase">${esc(a.language)}</span>`:''}
       </div>
       ${a.summary?`<div style="font-size:15px;color:#6b7280;line-height:1.8;margin-bottom:24px;padding:16px;background:var(--card-border);border-radius:12px">${esc(a.summary)}</div>`:''}
       <div class="article-content" style="font-size:16px;line-height:1.9">${contentHtml}</div>
     </div>
   `;
-  // ESC to close
-  const escHandler=e=>{if(e.key==='Escape'){overlay.style.display='none';document.removeEventListener('keydown',escHandler)}};
-  document.removeEventListener('keydown',escHandler);
-  document.addEventListener('keydown',escHandler);
+  readerEscHandler=e=>{if(e.key==='Escape')nCloseReader()};
+  document.addEventListener('keydown',readerEscHandler);
 };
 
 let nSearchTimer;
