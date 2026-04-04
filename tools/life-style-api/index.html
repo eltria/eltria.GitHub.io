@@ -107,6 +107,9 @@
 
       <!-- ═══ Dashboard ═══ -->
       <div id="v-dashboard" class="view active">
+        <div id="dash-token-warn" class="hidden card mb-4 border-yellow-400 dark:border-yellow-600" style="background:#fefce820">
+          <div class="flex items-center gap-2 text-sm text-yellow-700 dark:text-yellow-400">⚠️ 请先在右上角配置 Bearer Token，否则无法加载数据</div>
+        </div>
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6" id="dash-stats"></div>
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <div class="card" id="dash-weather"><div class="section-title">🌤 今日天气</div><div class="text-xs text-gray-400">Loading...</div></div>
@@ -394,7 +397,20 @@ function initTabs(sel,cb){
 //  Dashboard
 // ══════════════════════════════════════
 async function initDashboard(){
+  // Token warning
+  const warn=document.getElementById('dash-token-warn');
+  warn.classList.toggle('hidden',!!apiToken());
+
   const el=document.getElementById('dash-stats');
+  if(!apiToken()){
+    el.innerHTML=[{n:'—',l:'待处理待办'},{n:'—',l:'知识条目'},{n:'—',l:'衣物数量'},{n:'—',l:'商场数量'}].map(s=>`<div class="card stat-card"><div class="stat-num">${s.n}</div><div class="stat-label">${s.l}</div></div>`).join('');
+    document.getElementById('dash-weather').innerHTML='<div class="section-title">🌤 今日天气</div><div class="text-xs text-gray-400">请先配置 Token</div>';
+    document.getElementById('dash-outfit').innerHTML='<div class="section-title">👔 穿搭建议</div><div class="text-xs text-gray-400">请先配置 Token</div>';
+    document.getElementById('dash-todos').innerHTML='<div class="section-title">✅ 今日待办</div><div class="text-xs text-gray-400">请先配置 Token</div>';
+    document.getElementById('dash-llm').innerHTML='<div class="section-title">🤖 LLM 状态</div><div class="text-xs text-gray-400">请先配置 Token</div>';
+    return;
+  }
+
   el.innerHTML='<div class="col-span-4 flex justify-center py-4"><div class="spinner"></div></div>';
   try{
     const [todos,kStats,wdStats,fmStats]=await Promise.allSettled([
@@ -407,34 +423,34 @@ async function initDashboard(){
     el.innerHTML=[
       {n:pending,l:'待处理待办'},{n:kTotal,l:'知识条目'},{n:wdCount,l:'衣物数量'},{n:fmCount,l:'商场数量'}
     ].map(s=>`<div class="card stat-card"><div class="stat-num">${s.n}</div><div class="stat-label">${s.l}</div></div>`).join('');
-  }catch{el.innerHTML='<div class="text-xs text-gray-400">无法加载统计</div>'}
+  }catch(e){el.innerHTML='<div class="text-xs text-red-500">加载失败: '+e.message+'</div>'}
 
   // Weather
   try{
     const w=await GET('/layeros/weather/cache');
     const today=w?.[0];
     document.getElementById('dash-weather').innerHTML=today?`<div class="section-title">🌤 今日天气</div><div class="flex items-center gap-4"><div class="text-3xl font-bold">${today.tempMin}° ~ ${today.tempMax}°</div><div class="text-xs text-gray-400"><div>${today.condition}</div><div>湿度 ${today.humidity}% · 风速 ${today.windSpeed}m/s</div><div>体感 ${today.realFeelMin}° ~ ${today.realFeelMax}°</div></div></div>`:'<div class="section-title">🌤 天气</div><div class="text-xs text-gray-400">暂无缓存</div>';
-  }catch{}
+  }catch(e){document.getElementById('dash-weather').innerHTML='<div class="section-title">🌤 今日天气</div><div class="text-xs text-red-500">'+e.message+'</div>'}
 
   // Outfit
   try{
     const o=await GET('/layeros/outfit/cache');
     const today=o?.[0];
     document.getElementById('dash-outfit').innerHTML=today?`<div class="section-title">👔 穿搭建议</div><div class="text-sm mb-2">${today.layers?.join(' → ')||''}</div><div class="text-xs text-gray-400">${today.explanation||''}</div>`:'<div class="section-title">👔 穿搭建议</div><div class="text-xs text-gray-400">暂无推荐</div>';
-  }catch{}
+  }catch(e){document.getElementById('dash-outfit').innerHTML='<div class="section-title">👔 穿搭建议</div><div class="text-xs text-red-500">'+e.message+'</div>'}
 
   // Todos today
   try{
     const t=await GET('/todos/today');
     const el2=document.getElementById('dash-todos');
     el2.innerHTML=`<div class="section-title">✅ 今日待办</div>`+(t?.length?t.slice(0,5).map(i=>`<div class="flex items-center gap-2 py-1 text-sm"><span style="color:${PRI_COLORS[i.priority]}">●</span><span class="${i.status===2?'line-through text-gray-400':''}">${i.title}</span></div>`).join(''):'<div class="text-xs text-gray-400">今日无待办</div>');
-  }catch{}
+  }catch(e){document.getElementById('dash-todos').innerHTML='<div class="section-title">✅ 今日待办</div><div class="text-xs text-red-500">'+e.message+'</div>'}
 
   // LLM
   try{
     const l=await GET('/llm/status');
     document.getElementById('dash-llm').innerHTML=`<div class="section-title">🤖 LLM 状态</div><div class="text-sm"><div>主模型: <span class="font-semibold">${l.primary?.model||'未配置'}</span> ${l.primary?.configured?'<span class="text-green-500">●</span>':'<span class="text-red-500">●</span>'}</div><div class="text-xs text-gray-400 mt-1">Fallbacks: ${l.fallbacks?.length||0} · 熔断器: ${l.circuitBreaker?.state||'—'}</div></div>`;
-  }catch{}
+  }catch(e){document.getElementById('dash-llm').innerHTML='<div class="section-title">🤖 LLM 状态</div><div class="text-xs text-red-500">'+e.message+'</div>'}
 }
 
 // ══════════════════════════════════════
@@ -1127,7 +1143,10 @@ function boot(){
   const u=localStorage.getItem('ls-url');if(u)document.getElementById('cfg-url').value=u;
   const t=localStorage.getItem('ls-token');if(t)document.getElementById('cfg-token').value=t;
   document.getElementById('cfg-url').addEventListener('change',e=>localStorage.setItem('ls-url',e.target.value));
-  document.getElementById('cfg-token').addEventListener('input',e=>localStorage.setItem('ls-token',e.target.value));
+  document.getElementById('cfg-token').addEventListener('input',e=>{localStorage.setItem('ls-token',e.target.value)});
+  // Refresh on token change (debounced)
+  let tokenTimer;
+  document.getElementById('cfg-token').addEventListener('change',()=>{clearTimeout(tokenTimer);tokenTimer=setTimeout(()=>{if(currentView==='dashboard')initDashboard()},300)});
   navigate('dashboard');
 }
 </script>
