@@ -8,7 +8,14 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script>tailwind.config={darkMode:'class'}</script>
   <link rel="stylesheet" href="/assets/css/global.css">
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <style>
+    .article-content{line-height:1.7}.article-content h1,.article-content h2,.article-content h3{font-weight:600;margin:.8em 0 .4em}
+    .article-content p{margin:.4em 0}.article-content pre{background:#f3f4f6;border-radius:8px;padding:.8em;overflow-x:auto;margin:.5em 0;font-size:12px}
+    .dark .article-content pre{background:#1f2937}
+    .article-content code{font-size:.9em}.article-content blockquote{border-left:3px solid #d1d5db;padding-left:1em;color:#6b7280;margin:.5em 0}
+    .article-content a{color:#2563eb;text-decoration:underline}.dark .article-content a{color:#60a5fa}
+    .article-content img{max-width:100%;border-radius:8px}
     :root{--sidebar-w:64px}
     .sidebar-icon{width:40px;height:40px;display:flex;align-items:center;justify-content:center;border-radius:12px;font-size:18px;cursor:pointer;transition:all .15s}
     .sidebar-icon:hover{background:rgba(59,130,246,.12)}
@@ -84,6 +91,8 @@
     <div class="sidebar-icon" data-view="wardrobe" title="Wardrobe">👔</div>
     <div class="sidebar-icon" data-view="billsplit" title="BillSplit">💰</div>
     <div class="sidebar-icon" data-view="foodmap" title="FoodMap">🍜</div>
+    <div class="sidebar-icon" data-view="news" title="News">📰</div>
+    <div class="sidebar-icon" data-view="keys" title="API Keys">🔑</div>
     <div class="mt-auto"></div>
     <div class="sidebar-icon" data-view="settings" title="Settings">⚙️</div>
   </div>
@@ -276,12 +285,98 @@
         <div id="fm-restaurant-panel" class="hidden mt-4"></div>
       </div>
 
+      <!-- ═══ News ═══ -->
+      <div id="v-news" class="view">
+        <div class="flex gap-2 mb-4 flex-wrap">
+          <button class="tab-btn active" data-nt="articles">Articles</button>
+          <button class="tab-btn" data-nt="brief">Brief</button>
+          <button class="tab-btn" data-nt="briefing">Briefing</button>
+          <button class="tab-btn" data-nt="pool">Pool Stats</button>
+          <button class="tab-btn" data-nt="metrics">Metrics</button>
+        </div>
+        <!-- Articles -->
+        <div id="n-articles">
+          <div class="flex gap-2 mb-4 flex-wrap">
+            <select id="n-cat" class="input" style="width:160px" onchange="nLoadArticles(true)"><option value="">All Categories</option></select>
+            <select id="n-lang" class="input" style="width:120px" onchange="nLoadArticles(true)"><option value="">All Languages</option><option value="en">English</option><option value="zh">Chinese</option></select>
+            <input id="n-search" class="input flex-1" style="min-width:160px" placeholder="Search titles..." oninput="nSearchArticles()">
+            <button onclick="nLoadArticles(true)" class="btn btn-ghost text-xs">刷新</button>
+          </div>
+          <div id="n-articles-stats" class="text-xs text-gray-400 mb-3"></div>
+          <div id="n-articles-list"></div>
+          <button id="n-load-more" class="btn btn-ghost w-full mt-3 hidden" onclick="nLoadArticles(false)">Load More</button>
+        </div>
+        <!-- Brief -->
+        <div id="n-brief" class="hidden">
+          <div id="n-brief-digest" class="hidden card mb-4 border-blue-400" style="background:#dbeafe20"></div>
+          <div id="n-brief-list"></div>
+        </div>
+        <!-- Briefing -->
+        <div id="n-briefing" class="hidden">
+          <div class="flex items-center justify-between mb-4">
+            <div class="section-title mb-0">每日早报</div>
+            <div class="flex gap-2">
+              <button onclick="nBriefingRefresh()" class="btn btn-ghost text-xs">强制刷新</button>
+              <button onclick="nBriefingSend()" class="btn btn-primary text-xs">推送微信</button>
+            </div>
+          </div>
+          <div id="n-briefing-content"></div>
+        </div>
+        <!-- Pool Stats -->
+        <div id="n-pool" class="hidden">
+          <div id="n-pool-stats"></div>
+        </div>
+        <!-- Metrics -->
+        <div id="n-metrics" class="hidden">
+          <div class="flex items-center justify-between mb-4">
+            <div class="section-title mb-0">RSS 性能指标</div>
+            <button onclick="nLoadMetrics()" class="btn btn-ghost text-xs">刷新</button>
+          </div>
+          <div id="n-metrics-content"></div>
+        </div>
+      </div>
+
+      <!-- ═══ Keys ═══ -->
+      <div id="v-keys" class="view">
+        <div class="flex items-center justify-between mb-4">
+          <div class="section-title mb-0">API Key 管理</div>
+          <button onclick="showKeyModal()" class="btn btn-primary text-xs">+ 添加 Key</button>
+        </div>
+        <div id="keys-pool" class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6"></div>
+        <div class="section-title">Keys</div>
+        <div id="keys-list"></div>
+      </div>
+
       <!-- ═══ Settings ═══ -->
       <div id="v-settings" class="view">
         <div class="max-w-xl space-y-6">
           <div class="card">
             <div class="section-title">应用配置</div>
             <div class="space-y-3" id="cfg-app"></div>
+          </div>
+          <div class="card">
+            <div class="section-title">📰 News 服务配置</div>
+            <div class="space-y-3">
+              <div><label class="text-xs text-gray-400">RSS Service URL</label><input id="s-rss-url" class="input" placeholder="http://14.103.24.172:31020" oninput="localStorage.setItem('ls-rss-url',this.value)"></div>
+              <div><label class="text-xs text-gray-400">RSS Token</label><input id="s-rss-token" type="password" class="input" placeholder="Auth token" oninput="localStorage.setItem('ls-rss-token',this.value)"></div>
+              <div><label class="text-xs text-gray-400">Morning-Brief URL</label><input id="s-brief-url" class="input" placeholder="http://14.103.24.172:32197" oninput="localStorage.setItem('ls-brief-url',this.value)"></div>
+              <div><label class="text-xs text-gray-400">Auto-Refresh Interval</label><select id="s-news-refresh" class="input" onchange="localStorage.setItem('ls-news-refresh',this.value);setupNewsRefresh()"><option value="0">Off</option><option value="60000">1 min</option><option value="300000" selected>5 min</option><option value="900000">15 min</option></select></div>
+              <div class="flex gap-2">
+                <button onclick="testNewsConn()" class="btn btn-ghost text-xs">测试连接</button>
+                <span id="news-conn-status" class="text-xs self-center"></span>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="section-title">📋 飞书集成</div>
+            <div class="space-y-3">
+              <div class="text-xs text-gray-400">OAuth 授权获取飞书任务数据（早报第 4 板块）</div>
+              <div class="flex gap-2">
+                <button onclick="feishuAuth()" class="btn btn-primary text-xs">发起授权</button>
+                <button onclick="feishuDebug()" class="btn btn-ghost text-xs">调试数据</button>
+              </div>
+              <div id="feishu-debug-result"></div>
+            </div>
           </div>
           <div class="card">
             <div class="section-title">Claude API</div>
@@ -371,7 +466,7 @@ function empty(id,msg='暂无数据'){document.getElementById(id).innerHTML=`<di
 // ══════════════════════════════════════
 //  Router
 // ══════════════════════════════════════
-const VIEWS={dashboard:'Dashboard',todo:'Todo',knowledge:'Knowledge',layeros:'LayerOS',wardrobe:'Wardrobe',billsplit:'BillSplit',foodmap:'FoodMap',settings:'Settings'};
+const VIEWS={dashboard:'Dashboard',todo:'Todo',knowledge:'Knowledge',layeros:'LayerOS',wardrobe:'Wardrobe',billsplit:'BillSplit',foodmap:'FoodMap',news:'News',keys:'API Keys',settings:'Settings'};
 let currentView='dashboard';
 
 function navigate(v){
@@ -381,7 +476,7 @@ function navigate(v){
   document.querySelectorAll('.sidebar-icon').forEach(el=>{el.classList.toggle('active',el.dataset.view===v)});
   document.getElementById('view-title').textContent=VIEWS[v];
   // init view
-  const inits={dashboard:initDashboard,todo:initTodo,knowledge:initKnowledge,layeros:initLayerOS,wardrobe:initWardrobe,billsplit:initBillSplit,foodmap:initFoodMap,settings:initSettings};
+  const inits={dashboard:initDashboard,todo:initTodo,knowledge:initKnowledge,layeros:initLayerOS,wardrobe:initWardrobe,billsplit:initBillSplit,foodmap:initFoodMap,news:initNews,keys:initKeys,settings:initSettings};
   inits[v]?.();
 }
 
@@ -1108,6 +1203,407 @@ window.fmSyncAction=async function(action){
 };
 
 // ══════════════════════════════════════
+//  News — RSS & Morning-Brief API clients
+// ══════════════════════════════════════
+function rssUrl(){return localStorage.getItem('ls-rss-url')||''}
+function rssToken(){return localStorage.getItem('ls-rss-token')||''}
+function briefUrl(){return localStorage.getItem('ls-brief-url')||''}
+
+async function rssApi(path,params={}){
+  const base=rssUrl();if(!base)throw new Error('RSS URL 未配置，请在 Settings 中设置');
+  if(rssToken())params.token=rssToken();
+  const url=new URL(path,base);
+  Object.entries(params).forEach(([k,v])=>{if(v!==''&&v!=null)url.searchParams.set(k,v)});
+  const r=await fetch(url.toString());
+  if(!r.ok)throw new Error(`RSS ${r.status} ${r.statusText}`);
+  return r.json();
+}
+
+async function briefApi(method,path,body,params={}){
+  const base=briefUrl();if(!base)throw new Error('Brief URL 未配置，请在 Settings 中设置');
+  const url=new URL(path,base);
+  Object.entries(params).forEach(([k,v])=>{if(v!==''&&v!=null)url.searchParams.set(k,v)});
+  const opts={method};
+  if(body){opts.headers={'Content-Type':'application/json'};opts.body=JSON.stringify(body)}
+  const r=await fetch(url.toString(),opts);
+  if(!r.ok){const j=await r.json().catch(()=>null);throw new Error(j?.error||`Brief ${r.status}`)}
+  return r.json();
+}
+
+// ── News view ──
+let nArticles=[],nTotal=0,nOffset=0,nLastMaxId=0,nNewCount=0,nRefreshTimer=null;
+
+initTabs('[data-nt]',t=>{
+  ['n-articles','n-brief','n-briefing','n-pool','n-metrics'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+  document.getElementById('n-'+t).classList.remove('hidden');
+  if(t==='brief')nLoadBrief();
+  if(t==='briefing')nLoadBriefing();
+  if(t==='pool')nLoadPool();
+  if(t==='metrics')nLoadMetrics();
+});
+
+async function initNews(){
+  await nLoadCategoryMap();
+  await nLoadArticles(true);
+  setupNewsRefresh();
+}
+
+// -- Category map --
+async function nLoadCategoryMap(){
+  try{
+    const d=await rssApi('/api/category-map');
+    const cats=[...new Set(Object.values(d))].sort();
+    const sel=document.getElementById('n-cat');
+    sel.innerHTML='<option value="">All Categories</option>'+cats.map(c=>`<option value="${c}">${c}</option>`).join('');
+  }catch{}
+}
+
+// -- Articles --
+async function nLoadArticles(reset){
+  if(reset){nArticles=[];nOffset=0}
+  const list=document.getElementById('n-articles-list');
+  if(reset)loading('n-articles-list');
+  try{
+    const cat=document.getElementById('n-cat').value;
+    const lang=document.getElementById('n-lang').value;
+    const d=await rssApi('/api/articles',{offset:nOffset,limit:50,category:cat,language:lang});
+    const items=d.articles||[];
+    nArticles=reset?items:nArticles.concat(items);
+    nTotal=d.total||0;
+    nOffset=(d.offset||0)+items.length;
+    if(items.length&&items[0].id>nLastMaxId)nLastMaxId=items[0].id;
+    nRenderArticles();
+    document.getElementById('n-articles-stats').textContent=`${nTotal.toLocaleString()} articles`;
+    document.getElementById('n-load-more').classList.toggle('hidden',nOffset>=nTotal);
+  }catch(e){list.innerHTML=`<div class="text-xs text-red-500">${e.message}</div>`}
+}
+
+function nRenderArticles(){
+  const q=document.getElementById('n-search').value.toLowerCase().trim();
+  const filtered=q?nArticles.filter(a=>(a.title||'').toLowerCase().includes(q)||(a.summary||'').toLowerCase().includes(q)):nArticles;
+  const list=document.getElementById('n-articles-list');
+  if(!filtered.length){empty('n-articles-list','暂无文章');return}
+  list.innerHTML=filtered.map(a=>`
+    <div class="card mb-2 cursor-pointer hover:border-blue-400 transition-colors" data-aid="${a.id}">
+      <div class="flex items-start justify-between gap-3 mb-1">
+        <div class="text-sm font-medium">${esc(a.title)}</div>
+        <span class="badge shrink-0" style="background:#dbeafe;color:#2563eb">${esc(a.category||'')}</span>
+      </div>
+      ${a.summary?`<div class="text-xs text-gray-400 line-clamp-2 mb-1">${esc(a.summary)}</div>`:''}
+      <div class="flex items-center gap-3 text-xs text-gray-400">
+        ${a.source_name?`<span>${esc(a.source_name)}</span>`:''}
+        ${a.published?`<span>${fmtDateTime(a.published)}</span>`:''}
+        ${a.language?`<span class="uppercase">${esc(a.language)}</span>`:''}
+      </div>
+    </div>
+  `).join('');
+  // Click to open detail
+  list.querySelectorAll('[data-aid]').forEach(el=>{
+    el.addEventListener('click',()=>{
+      const a=nArticles.find(x=>String(x.id)===el.dataset.aid);
+      if(a)nShowArticleDetail(a);
+    });
+  });
+}
+
+function nShowArticleDetail(a){
+  const contentHtml=a.content?marked.parse(a.content):(a.summary?`<p>${esc(a.summary)}</p>`:'<p class="text-gray-400">No content</p>');
+  showModal(`
+    <div style="max-height:70vh;overflow-y:auto">
+      <h3 class="text-lg font-bold mb-2">${esc(a.title)}</h3>
+      <div class="flex flex-wrap gap-2 mb-3 text-xs text-gray-400">
+        ${a.category?`<span class="badge" style="background:#dbeafe;color:#2563eb">${esc(a.category)}</span>`:''}
+        ${a.source_name?`<span>${esc(a.source_name)}</span>`:''}
+        ${a.published?`<span>${fmtDateTime(a.published)}</span>`:''}
+        ${a.language?`<span class="uppercase">${esc(a.language)}</span>`:''}
+      </div>
+      ${a.summary?`<div class="text-sm text-gray-500 dark:text-gray-400 p-3 bg-gray-50 dark:bg-gray-900 rounded-lg mb-3">${esc(a.summary)}</div>`:''}
+      <div class="article-content text-sm">${contentHtml}</div>
+      ${a.url?`<a href="${esc(a.url)}" target="_blank" rel="noopener" class="inline-block mt-4 text-xs text-blue-500 hover:underline">Open original →</a>`:''}
+    </div>
+  `);
+}
+
+let nSearchTimer;
+window.nSearchArticles=function(){clearTimeout(nSearchTimer);nSearchTimer=setTimeout(nRenderArticles,300)};
+window.nLoadArticles=nLoadArticles;
+
+function esc(s){if(!s)return'';const d=document.createElement('div');d.textContent=s;return d.innerHTML}
+
+// -- Brief --
+let currentBriefId='';
+async function nLoadBrief(){
+  loading('n-brief-list');
+  document.getElementById('n-brief-digest').classList.add('hidden');
+  try{
+    const d=await briefApi('GET','/api/v1/brief');
+    if(!d.items||!d.items.length){empty('n-brief-list','Pool 为空，暂无 Brief');return}
+    currentBriefId=d.id;
+    if(d.digest){
+      const dig=document.getElementById('n-brief-digest');
+      dig.textContent=d.digest;dig.classList.remove('hidden');
+    }
+    document.getElementById('n-brief-list').innerHTML=d.items.map((item,i)=>`
+      <div class="card mb-2">
+        <div class="flex items-start justify-between gap-3 mb-1">
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-mono font-bold text-gray-300 dark:text-gray-600">${String(i+1).padStart(2,'0')}</span>
+            <div class="text-sm font-medium cursor-pointer hover:text-blue-500" data-brief-idx="${i}">${esc(item.title)}</div>
+          </div>
+          <div class="flex items-center gap-2 shrink-0">
+            <span class="text-xs font-mono font-bold ${item.score>=70?'text-green-500':item.score>=50?'text-yellow-500':'text-gray-400'}">${Math.round(item.score)}</span>
+            <span class="badge" style="background:#dbeafe;color:#2563eb">${esc(item.category)}</span>
+          </div>
+        </div>
+        <div class="text-xs text-gray-400 mb-2">${esc(item.summary)}</div>
+        <div class="flex items-center justify-between">
+          <span class="text-xs text-gray-400">${esc(item.source_name)}</span>
+          <div class="flex gap-1">
+            <button class="btn btn-ghost text-xs py-1 px-2" data-fb="${i}" data-signal="positive" title="有用">👍</button>
+            <button class="btn btn-ghost text-xs py-1 px-2" data-fb="${i}" data-signal="negative" title="没用">👎</button>
+          </div>
+        </div>
+      </div>
+    `).join('');
+    // Feedback handlers
+    document.querySelectorAll('[data-fb]').forEach(btn=>{
+      btn.addEventListener('click',async()=>{
+        const idx=+btn.dataset.fb;const item=d.items[idx];
+        try{
+          await briefApi('POST','/api/v1/feedback',{
+            brief_id:d.id,item_id:item.id,signal:btn.dataset.signal,
+            source:'reader_web',category:item.category,source_domain:item.source_name
+          });
+          btn.parentElement.querySelectorAll('button').forEach(b=>{b.disabled=true;b.style.opacity='0.3'});
+          btn.style.opacity='1';
+          toast(btn.dataset.signal==='positive'?'👍 已反馈':'👎 已反馈');
+        }catch(e){toast(e.message,false)}
+      });
+    });
+    // Brief item click to show source
+    document.querySelectorAll('[data-brief-idx]').forEach(el=>{
+      el.addEventListener('click',()=>{
+        const item=d.items[+el.dataset.briefIdx];
+        if(item.source_url)window.open(item.source_url,'_blank');
+      });
+    });
+  }catch(e){document.getElementById('n-brief-list').innerHTML=`<div class="text-xs text-red-500">${e.message}</div>`}
+}
+
+// -- Briefing --
+async function nLoadBriefing(refresh=false,send=false){
+  loading('n-briefing-content');
+  try{
+    const params={};
+    if(refresh)params.refresh='true';
+    if(send)params.send='true';
+    const d=await briefApi('GET','/api/v1/briefing',null,params);
+    if(!d.sections||!d.sections.length){empty('n-briefing-content','暂无早报');return}
+    document.getElementById('n-briefing-content').innerHTML=`
+      <div class="card mb-4">
+        <div class="text-lg font-bold mb-1">${esc(d.title||'')}</div>
+        <div class="text-xs text-gray-400 mb-3">${d.generated_at?fmtDateTime(d.generated_at):''}</div>
+        ${d.sections.map(s=>`
+          <div class="py-3 border-t border-gray-100 dark:border-gray-800">
+            <div class="text-xs font-bold text-blue-500 mb-1">${esc(s.label)}</div>
+            <div class="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">${esc(s.content)}</div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+    if(send)toast('已推送微信');
+  }catch(e){document.getElementById('n-briefing-content').innerHTML=`<div class="text-xs text-red-500">${e.message}</div>`}
+}
+window.nBriefingRefresh=()=>nLoadBriefing(true);
+window.nBriefingSend=()=>nLoadBriefing(false,true);
+
+// -- Pool Stats --
+async function nLoadPool(){
+  loading('n-pool-stats');
+  try{
+    const d=await briefApi('GET','/api/v1/pool/stats');
+    const cats=d.category_distribution||{};
+    const catHtml=Object.entries(cats).sort((a,b)=>b[1]-a[1]).map(([cat,count])=>{
+      const pct=d.total_items?Math.round(count/d.total_items*100):0;
+      return`<div class="flex items-center justify-between py-1.5 border-t border-gray-100 dark:border-gray-800">
+        <span class="text-sm">${esc(cat)}</span>
+        <div class="flex items-center gap-2">
+          <div class="w-24 h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden"><div class="h-full bg-blue-500 rounded-full" style="width:${pct}%"></div></div>
+          <span class="text-xs text-gray-400 w-8 text-right">${count}</span>
+        </div>
+      </div>`;
+    }).join('');
+    document.getElementById('n-pool-stats').innerHTML=`
+      <div class="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+        <div class="card stat-card"><div class="stat-num">${d.total_items||0}</div><div class="stat-label">Pool Items</div></div>
+        <div class="card stat-card"><div class="stat-num">${(d.avg_score||0).toFixed(1)}</div><div class="stat-label">Avg Score</div></div>
+        <div class="card stat-card"><div class="stat-num">${Object.keys(cats).length}</div><div class="stat-label">Categories</div></div>
+      </div>
+      <div class="card"><div class="section-title">Category Distribution</div>${catHtml}</div>
+    `;
+  }catch(e){document.getElementById('n-pool-stats').innerHTML=`<div class="text-xs text-red-500">${e.message}</div>`}
+}
+
+// -- Metrics --
+window.nLoadMetrics=async function(){
+  loading('n-metrics-content');
+  try{
+    const d=await rssApi('/metrics');
+    document.getElementById('n-metrics-content').innerHTML=`
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div class="card stat-card"><div class="stat-num">${(d.total_requests||0).toLocaleString()}</div><div class="stat-label">Total Requests</div></div>
+        <div class="card stat-card"><div class="stat-num">${((d.cache_hit_rate||0)*100).toFixed(1)}%</div><div class="stat-label">Cache Hit Rate</div></div>
+        <div class="card stat-card"><div class="stat-num">${d.p50_latency_us||0}μs</div><div class="stat-label">P50 Latency</div></div>
+        <div class="card stat-card"><div class="stat-num">${d.p99_latency_us||0}μs</div><div class="stat-label">P99 Latency</div></div>
+      </div>
+      <div class="card">
+        <div class="section-title">详细指标</div>
+        <div class="space-y-1 text-sm">
+          <div class="flex justify-between"><span class="text-gray-400">Strategy</span><span>${d.active_strategy||'—'}</span></div>
+          <div class="flex justify-between"><span class="text-gray-400">Avg Latency</span><span>${d.avg_latency_us||0}μs</span></div>
+          <div class="flex justify-between"><span class="text-gray-400">P95 Latency</span><span>${d.p95_latency_us||0}μs</span></div>
+          <div class="flex justify-between"><span class="text-gray-400">Feed Cache Count</span><span>${d.feed_cache_count||0}</span></div>
+        </div>
+      </div>
+    `;
+  }catch(e){document.getElementById('n-metrics-content').innerHTML=`<div class="text-xs text-red-500">${e.message}</div>`}
+};
+
+// -- Auto-refresh --
+function setupNewsRefresh(){
+  if(nRefreshTimer)clearInterval(nRefreshTimer);
+  const interval=parseInt(localStorage.getItem('ls-news-refresh'))||0;
+  if(interval<=0||!rssUrl())return;
+  nRefreshTimer=setInterval(async()=>{
+    try{
+      const d=await rssApi('/api/articles',{offset:0,limit:5});
+      const newItems=(d.articles||[]).filter(a=>a.id>nLastMaxId);
+      if(newItems.length){
+        nNewCount+=newItems.length;
+        nLastMaxId=Math.max(nLastMaxId,...newItems.map(a=>a.id));
+        // Update sidebar icon with dot
+        const icon=document.querySelector('[data-view="news"]');
+        if(icon&&!icon.querySelector('.news-dot')){
+          const dot=document.createElement('span');
+          dot.className='news-dot';
+          dot.style.cssText='position:absolute;top:4px;right:4px;width:6px;height:6px;background:#ef4444;border-radius:50%';
+          icon.style.position='relative';
+          icon.appendChild(dot);
+        }
+      }
+    }catch{}
+  },interval);
+}
+
+// -- Test connection --
+window.testNewsConn=async function(){
+  const el=document.getElementById('news-conn-status');
+  el.textContent='Testing...';el.className='text-xs self-center text-gray-400';
+  const results=[];
+  if(rssUrl()){
+    try{const r=await fetch(rssUrl()+'/health');const d=await r.json();results.push(d.status==='ok'?'RSS:OK':'RSS:Error')}
+    catch(e){results.push('RSS:'+((e.message||'').includes('fetch')?'CORS/Network':'Failed'))}
+  }
+  if(briefUrl()){
+    try{const r=await fetch(briefUrl()+'/health');const d=await r.json();results.push(d.status==='ok'?'Brief:OK':'Brief:Error')}
+    catch(e){results.push('Brief:'+((e.message||'').includes('fetch')?'CORS/Network':'Failed'))}
+  }
+  if(!results.length)results.push('未配置 URL');
+  const ok=results.every(r=>r.includes('OK'));
+  el.textContent=results.join(' · ');
+  el.className=`text-xs self-center ${ok?'text-green-500':'text-red-500'}`;
+};
+
+// -- Feishu --
+window.feishuAuth=function(){
+  if(!briefUrl()){toast('请先配置 Brief URL',false);return}
+  window.open(briefUrl()+'/api/v1/feishu/authorize','_blank');
+};
+window.feishuDebug=async function(){
+  const el=document.getElementById('feishu-debug-result');
+  el.innerHTML='<div class="spinner"></div>';
+  try{
+    const d=await briefApi('GET','/api/v1/feishu/debug');
+    el.innerHTML=`<pre class="text-xs bg-gray-50 dark:bg-gray-900 p-3 rounded-lg overflow-auto max-h-60">${esc(JSON.stringify(d,null,2))}</pre>`;
+  }catch(e){el.innerHTML=`<div class="text-xs text-red-500">${e.message}</div>`}
+};
+
+// ══════════════════════════════════════
+//  Keys — Tavily API Key Management
+// ══════════════════════════════════════
+async function initKeys(){await loadKeys()}
+
+async function loadKeys(){
+  loading('keys-pool');loading('keys-list');
+  try{
+    const d=await briefApi('GET','/api/v1/keys/stats',null,{service:'tavily'});
+    const pool=d.pool||{};
+    const statusColors={on_track:'text-green-500',over_budget:'text-red-500',under_budget:'text-blue-500',exhausted:'text-red-500'};
+    document.getElementById('keys-pool').innerHTML=`
+      <div class="card stat-card"><div class="stat-num">${pool.total_remaining??'—'}</div><div class="stat-label">Remaining</div></div>
+      <div class="card stat-card"><div class="stat-num">${pool.total_used??'—'}</div><div class="stat-label">Used</div></div>
+      <div class="card stat-card"><div class="stat-num">${(d.month_progress||0).toFixed(0)}%</div><div class="stat-label">Month Progress</div></div>
+      <div class="card stat-card"><div class="stat-num ${statusColors[pool.pool_status]||''}">${pool.pool_status||'—'}</div><div class="stat-label">Status</div></div>
+    `;
+    const keys=d.keys||[];
+    if(!keys.length){empty('keys-list','暂无 Key');return}
+    document.getElementById('keys-list').innerHTML=keys.map(k=>{
+      const pct=k.usage_percent||0;
+      const paceColor=k.pace>1.2?'text-red-500':k.pace<0.8?'text-blue-500':'text-green-500';
+      return`
+        <div class="card mb-2 flex items-center justify-between">
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2 mb-1">
+              <span class="text-sm font-mono font-medium">${esc(k.id)}</span>
+              ${k.active?'<span class="badge bg-green-100 text-green-700">Active</span>':''}
+              ${k.exhausted?'<span class="badge bg-red-100 text-red-700">Exhausted</span>':''}
+              ${k.disabled?'<span class="badge bg-gray-100 text-gray-700">Disabled</span>':''}
+            </div>
+            <div class="flex items-center gap-4 text-xs text-gray-400">
+              <span>${k.used_this_month}/${k.monthly_limit}</span>
+              <span class="${paceColor}">Pace: ${(k.pace||0).toFixed(2)}x</span>
+              <span>Added: ${fmtDate(k.added_at)}</span>
+            </div>
+            <div class="w-full h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full mt-2 overflow-hidden">
+              <div class="h-full rounded-full ${pct>=90?'bg-red-500':pct>=70?'bg-yellow-500':'bg-blue-500'}" style="width:${Math.min(pct,100)}%"></div>
+            </div>
+          </div>
+          <button onclick="keyDel('tavily','${esc(k.id)}')" class="text-gray-300 hover:text-red-500 ml-3 shrink-0">🗑</button>
+        </div>`;
+    }).join('');
+  }catch(e){
+    document.getElementById('keys-pool').innerHTML=`<div class="col-span-4 text-xs text-red-500">${e.message}</div>`;
+    document.getElementById('keys-list').innerHTML='';
+  }
+}
+
+window.showKeyModal=function(){
+  showModal(`<h3 class="text-sm font-bold mb-4">添加 API Key</h3><div class="space-y-3">
+    <div><label class="text-xs text-gray-400">Service</label><input id="m-key-svc" class="input" value="tavily" placeholder="tavily"></div>
+    <div><label class="text-xs text-gray-400">API Key</label><input id="m-key-val" class="input" placeholder="tvly-xxx"></div>
+    <div><label class="text-xs text-gray-400">Monthly Limit</label><input id="m-key-limit" type="number" class="input" value="1000"></div>
+    <div class="flex justify-end gap-2"><button onclick="closeModal()" class="btn btn-ghost">取消</button><button onclick="keyCreate()" class="btn btn-primary">添加</button></div></div>`);
+};
+
+window.keyCreate=async function(){
+  const key=document.getElementById('m-key-val').value.trim();if(!key){toast('请输入 Key',false);return}
+  try{
+    await briefApi('POST','/api/v1/keys',{
+      service:document.getElementById('m-key-svc').value||'tavily',
+      key,monthly_limit:+document.getElementById('m-key-limit').value||1000
+    });
+    toast('Key 已添加');closeModal();loadKeys();
+  }catch(e){toast(e.message,false)}
+};
+
+window.keyDel=async function(svc,id){
+  try{
+    await briefApi('DELETE','/api/v1/keys',null,{service:svc,id});
+    toast('Key 已删除');loadKeys();
+  }catch(e){toast(e.message,false)}
+};
+
+// ══════════════════════════════════════
 //  Settings
 // ══════════════════════════════════════
 async function initSettings(){
@@ -1117,6 +1613,12 @@ async function initSettings(){
     <div><label class="text-xs text-gray-400">Bearer Token</label><input id="s-token" type="password" class="input" value="${apiToken()}" oninput="document.getElementById('cfg-token').value=this.value;localStorage.setItem('ls-token',this.value)"></div>
   `;
   document.getElementById('s-url').value=apiUrl();
+
+  // News service config
+  document.getElementById('s-rss-url').value=rssUrl();
+  document.getElementById('s-rss-token').value=rssToken();
+  document.getElementById('s-brief-url').value=briefUrl();
+  document.getElementById('s-news-refresh').value=localStorage.getItem('ls-news-refresh')||'300000';
 
   // Load remote config
   try{
