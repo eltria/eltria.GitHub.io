@@ -91,9 +91,10 @@
     <!-- CORS Proxy -->
     <div class="flex items-center gap-2 mb-4 text-xs">
       <label class="flex items-center gap-1 text-gray-400">
-        <input type="checkbox" id="cfg-proxy" class="rounded" onchange="saveConfig()"> CORS Proxy
+        <input type="checkbox" id="cfg-proxy" class="rounded" checked onchange="saveConfig()"> CORS Proxy
       </label>
-      <span class="text-[10px] text-gray-300 dark:text-gray-600">(浏览器直接请求 API 会被 CORS 拦截，勾选后通过代理转发)</span>
+      <span class="text-[10px] text-gray-300 dark:text-gray-600">(通过 Life-Style 后端代理转发，绕过浏览器跨域限制)</span>
+      <input id="proxy-token" type="password" class="cfg-input text-[10px]" style="width:160px" placeholder="Life-Style Token" oninput="localStorage.setItem('ls-token',this.value)">
     </div>
 
     <!-- ═══ Quick Probe ═══ -->
@@ -214,7 +215,35 @@ let abortCtrl = null;
 // ═══════════════════════════════════════
 const $=id=>document.getElementById(id);
 function cfg(){return{protocol:$('cfg-protocol').value,url:$('cfg-url').value.replace(/\/$/,''),key:$('cfg-key').value,model:$('cfg-model').value,proxy:$('cfg-proxy').checked}}
-function proxyUrl(url){const c=cfg();if(!c.proxy)return url;return`https://corsproxy.io/?url=${encodeURIComponent(url)}`}
+
+// Life-Style 后端代理
+const PROXY_BASE='https://life-style-wgsx.onrender.com/api/v1';
+function proxyToken(){return localStorage.getItem('ls-token')||''}
+
+async function proxyFetch(url,opts={}){
+  const c=cfg();
+  if(!c.proxy){
+    // 直接请求（需要目标 API 允许 CORS）
+    return fetch(url,opts);
+  }
+  // 通过 Life-Style 后端代理
+  const proxyBody={url,method:opts.method||'GET',headers:{},timeout:30};
+  // 提取 headers
+  if(opts.headers){
+    if(opts.headers instanceof Headers){opts.headers.forEach((v,k)=>proxyBody.headers[k]=v)}
+    else{Object.assign(proxyBody.headers,opts.headers)}
+  }
+  // 提取 body
+  if(opts.body){
+    try{proxyBody.body=JSON.parse(opts.body)}catch{proxyBody.body=opts.body}
+  }
+  const pHeaders={'Content-Type':'application/json'};
+  const tk=proxyToken();if(tk)pHeaders['Authorization']=`Bearer ${tk}`;
+  return fetch(`${PROXY_BASE}/proxy`,{method:'POST',headers:pHeaders,body:JSON.stringify(proxyBody),signal:opts.signal});
+}
+
+// 兼容旧代码 — proxyUrl 不再需要，改用 proxyFetch
+function proxyUrl(url){return url}
 function saveConfig(){localStorage.setItem('llm-pg',JSON.stringify({...cfg(),preset:currentPreset,sys:$('sys-prompt').value,proxy:$('cfg-proxy').checked}))}
 function loadConfig(){
   try{
@@ -225,7 +254,8 @@ function loadConfig(){
     if(s.model)$('cfg-model').value=s.model;
     if(s.protocol)$('cfg-protocol').value=s.protocol;
     if(s.sys)$('sys-prompt').value=s.sys;
-    if(s.proxy)$('cfg-proxy').checked=true;
+    if(s.proxy!==undefined)$('cfg-proxy').checked=s.proxy;
+    const pt=localStorage.getItem('ls-token');if(pt)$('proxy-token').value=pt;
   }catch{}
 }
 
@@ -334,7 +364,7 @@ async function callLLM(userMsg){
   $('btn-send').textContent='...';
 
   try{
-    const res=await fetch(proxyUrl(url),{method:'POST',headers,body:JSON.stringify(body),signal:abortCtrl.signal});
+    const res=await proxyFetch(url,{method:'POST',headers,body:JSON.stringify(body),signal:abortCtrl.signal});
 
     if(!res.ok){
       const err=await res.text();
@@ -460,7 +490,7 @@ window.clearChat=function(){
 
 async function probeGet(url,headers){
   try{
-    const res=await fetch(proxyUrl(url),{headers,signal:AbortSignal.timeout(12000)});
+    const res=await proxyFetch(url,{headers,signal:AbortSignal.timeout(12000)});
     const body=await res.json().catch(()=>null);
     return{code:res.status,body};
   }catch(e){return{code:0,body:{_error:e.message}}}
@@ -468,7 +498,7 @@ async function probeGet(url,headers){
 
 async function probePost(url,headers,payload){
   try{
-    const res=await fetch(proxyUrl(url),{method:'POST',headers,body:JSON.stringify(payload),signal:AbortSignal.timeout(12000)});
+    const res=await proxyFetch(url,{method:'POST',headers,body:JSON.stringify(payload),signal:AbortSignal.timeout(12000)});
     const body=await res.json().catch(()=>null);
     return{code:res.status,body};
   }catch(e){return{code:0,body:{_error:e.message}}}
@@ -653,6 +683,8 @@ window.selectModel=function(id){
 //  Init
 // ═══════════════════════════════════════
 loadConfig();
+// Ensure proxy token is loaded
+const _pt=localStorage.getItem('ls-token');if(_pt&&$('proxy-token'))$('proxy-token').value=_pt;
   </script>
 </body>
 </html>
