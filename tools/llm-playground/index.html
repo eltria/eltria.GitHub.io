@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="zh-cn" class="">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LLM Playground — Eltria</title>
+  <meta name="description" content="Test Anthropic and OpenAI compatible LLM APIs with streaming support.">
+  <script src="/assets/js/theme.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config={darkMode:'class'}</script>
+  <link rel="stylesheet" href="/assets/css/global.css">
+  <style>
+    .chat-msg{max-width:85%;padding:12px 16px;border-radius:16px;font-size:13px;line-height:1.7;white-space:pre-wrap;word-break:break-word}
+    .msg-user{background:#3b82f6;color:#fff;border-bottom-right-radius:4px;margin-left:auto}
+    .msg-bot{background:#f3f4f6;color:#1f2937;border-bottom-left-radius:4px}
+    .dark .msg-bot{background:#1e293b;color:#e2e8f0}
+    .msg-meta{font-size:10px;color:#9ca3af;margin-top:4px}
+    .preset-btn{padding:4px 10px;font-size:11px;font-weight:600;border-radius:8px;cursor:pointer;border:1px solid #e5e7eb;background:transparent;color:#6b7280;transition:all .15s}
+    .preset-btn:hover{border-color:#3b82f6;color:#3b82f6}
+    .preset-btn.active{background:#3b82f6;color:#fff;border-color:#3b82f6}
+    .dark .preset-btn{border-color:#374151;color:#9ca3af}
+    .dark .preset-btn:hover{border-color:#60a5fa;color:#60a5fa}
+    .dark .preset-btn.active{background:#3b82f6;color:#fff}
+    .cfg-input{padding:6px 10px;font-size:12px;border-radius:8px;border:1px solid #e5e7eb;background:#f9fafb;outline:none;transition:border .15s}
+    .cfg-input:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.1)}
+    .dark .cfg-input{background:#0f172a;border-color:#1e293b;color:#e2e8f0}
+    .btn{padding:7px 14px;font-size:12px;font-weight:600;border-radius:8px;cursor:pointer;border:none;transition:all .15s}
+    .btn-primary{background:#3b82f6;color:#fff}.btn-primary:hover{background:#2563eb}
+    .btn-ghost{background:transparent;color:#6b7280;border:1px solid #e5e7eb}
+    .btn-ghost:hover{background:#f3f4f6}.dark .btn-ghost{border-color:#374151;color:#9ca3af}.dark .btn-ghost:hover{background:#1e293b}
+    .btn-danger{background:#ef4444;color:#fff}.btn-danger:hover{background:#dc2626}
+    .btn:disabled{opacity:.5;cursor:not-allowed}
+    .spinner{width:16px;height:16px;border:2px solid rgba(59,130,246,.2);border-top-color:#3b82f6;border-radius:50%;animation:spin .6s linear infinite;display:inline-block}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .raw-panel{font-family:'SF Mono','Fira Code',monospace;font-size:11px;line-height:1.5;white-space:pre-wrap;word-break:break-all;max-height:300px;overflow:auto;padding:12px;border-radius:10px;background:#f8fafc;border:1px solid #e2e8f0}
+    .dark .raw-panel{background:#0f172a;border-color:#1e293b}
+    .param-slider{-webkit-appearance:none;height:4px;border-radius:2px;background:#e2e8f0;outline:none}
+    .param-slider::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:#3b82f6;cursor:pointer}
+    .dark .param-slider{background:#374151}
+    .collapse-btn{cursor:pointer;user-select:none;display:flex;align-items:center;gap:4px}
+    .collapse-btn svg{transition:transform .2s}
+    .collapse-btn.open svg{transform:rotate(90deg)}
+  </style>
+</head>
+<body class="bg-white dark:bg-gray-950 text-gray-800 dark:text-gray-200 antialiased">
+  <script type="module">import{initNav}from'/assets/js/nav.js';initNav();</script>
+
+  <div class="max-w-5xl mx-auto px-6 py-16">
+    <div class="mb-6 flex items-center justify-between">
+      <a href="/tools/" class="text-xs text-gray-400 hover:text-blue-500 no-underline">&larr; Tools</a>
+    </div>
+    <h1 class="text-2xl font-bold mb-1">LLM Playground</h1>
+    <p class="text-xs text-gray-400 mb-6">Test Anthropic & OpenAI compatible APIs with streaming</p>
+
+    <!-- ═══ Presets ═══ -->
+    <div class="flex flex-wrap gap-2 mb-4">
+      <button class="preset-btn active" data-preset="anthropic">Anthropic</button>
+      <button class="preset-btn" data-preset="openai">OpenAI</button>
+      <button class="preset-btn" data-preset="doubao">豆包</button>
+      <button class="preset-btn" data-preset="deepseek">DeepSeek</button>
+      <button class="preset-btn" data-preset="ollama">Ollama</button>
+      <button class="preset-btn" data-preset="custom">Custom</button>
+    </div>
+
+    <!-- ═══ Config ═══ -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-2 mb-4">
+      <div>
+        <label class="text-[10px] text-gray-400 block mb-1">Protocol</label>
+        <select id="cfg-protocol" class="cfg-input w-full">
+          <option value="anthropic">Anthropic</option>
+          <option value="openai">OpenAI</option>
+        </select>
+      </div>
+      <div>
+        <label class="text-[10px] text-gray-400 block mb-1">Base URL</label>
+        <input id="cfg-url" class="cfg-input w-full" placeholder="https://api.anthropic.com/v1">
+      </div>
+      <div>
+        <label class="text-[10px] text-gray-400 block mb-1">API Key</label>
+        <input id="cfg-key" type="password" class="cfg-input w-full" placeholder="sk-...">
+      </div>
+      <div>
+        <label class="text-[10px] text-gray-400 block mb-1">Model</label>
+        <div class="flex gap-1">
+          <input id="cfg-model" class="cfg-input flex-1" placeholder="claude-sonnet-4-20250514">
+          <button id="btn-models" class="btn btn-ghost text-[10px] px-2" title="Fetch models (OpenAI only)">📋</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ System Prompt ═══ -->
+    <div class="mb-4">
+      <div class="collapse-btn text-xs text-gray-400 font-semibold mb-1" onclick="toggleSection('sys-section',this)">
+        <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+        System Prompt
+      </div>
+      <div id="sys-section" class="hidden">
+        <textarea id="sys-prompt" class="cfg-input w-full" rows="2" placeholder="You are a helpful assistant."></textarea>
+      </div>
+    </div>
+
+    <!-- ═══ Chat Area ═══ -->
+    <div id="chat-area" class="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-4 mb-4 overflow-auto" style="min-height:300px;max-height:50vh">
+      <div id="chat-messages" class="space-y-3">
+        <div class="text-center text-xs text-gray-400 py-8">Click "Hello Test" or type a message to start</div>
+      </div>
+    </div>
+
+    <!-- ═══ Parameters ═══ -->
+    <div class="flex flex-wrap items-center gap-4 mb-3 text-xs text-gray-500">
+      <label class="flex items-center gap-2">
+        Temperature
+        <input type="range" id="p-temp" class="param-slider w-20" min="0" max="2" step="0.1" value="0.7">
+        <span id="p-temp-val" class="w-6 text-right">0.7</span>
+      </label>
+      <label class="flex items-center gap-2">
+        Max Tokens
+        <input type="range" id="p-max" class="param-slider w-20" min="64" max="8192" step="64" value="1024">
+        <span id="p-max-val" class="w-10 text-right">1024</span>
+      </label>
+      <label class="flex items-center gap-2">
+        Top P
+        <input type="range" id="p-topp" class="param-slider w-20" min="0" max="1" step="0.05" value="1">
+        <span id="p-topp-val" class="w-6 text-right">1</span>
+      </label>
+      <label class="flex items-center gap-1">
+        <input type="checkbox" id="p-stream" checked class="rounded"> Stream
+      </label>
+    </div>
+
+    <!-- ═══ Input ═══ -->
+    <div class="flex gap-2 mb-3">
+      <textarea id="msg-input" class="cfg-input flex-1" rows="2" placeholder="Type your message..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();send()}"></textarea>
+      <div class="flex flex-col gap-1">
+        <button id="btn-send" onclick="send()" class="btn btn-primary flex-1">Send</button>
+        <button onclick="helloTest()" class="btn btn-ghost text-[10px]">🚀 Hello</button>
+      </div>
+    </div>
+
+    <div class="flex gap-2 mb-4">
+      <button onclick="clearChat()" class="btn btn-ghost text-[10px]">🗑 Clear</button>
+      <button onclick="toggleSection('raw-section',this)" class="collapse-btn btn btn-ghost text-[10px]">
+        <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+        Raw JSON
+      </button>
+    </div>
+
+    <!-- ═══ Raw JSON ═══ -->
+    <div id="raw-section" class="hidden">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <div class="text-[10px] text-gray-400 font-semibold mb-1">Request</div>
+          <div id="raw-req" class="raw-panel">—</div>
+        </div>
+        <div>
+          <div class="text-[10px] text-gray-400 font-semibold mb-1">Response</div>
+          <div id="raw-res" class="raw-panel">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ Models Modal ═══ -->
+    <div id="models-modal" class="fixed inset-0 z-50 hidden">
+      <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="document.getElementById('models-modal').classList.add('hidden')"></div>
+      <div class="relative max-w-md w-full mx-auto mt-[15vh] bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div class="px-4 py-3 border-b border-gray-100 dark:border-gray-800 text-sm font-semibold">Available Models</div>
+        <div id="models-list" class="max-h-80 overflow-auto py-2 text-xs"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+// ═══════════════════════════════════════
+//  Presets
+// ═══════════════════════════════════════
+const PRESETS = {
+  anthropic: { protocol: 'anthropic', url: 'https://api.anthropic.com/v1', model: 'claude-sonnet-4-20250514' },
+  openai:    { protocol: 'openai', url: 'https://api.openai.com/v1', model: 'gpt-4o' },
+  doubao:    { protocol: 'openai', url: 'https://ark.cn-beijing.volces.com/api/v3', model: '' },
+  deepseek:  { protocol: 'openai', url: 'https://api.deepseek.com/v1', model: 'deepseek-chat' },
+  ollama:    { protocol: 'openai', url: 'http://localhost:11434/v1', model: '' },
+  custom:    { protocol: 'openai', url: '', model: '' },
+};
+
+let currentPreset = 'anthropic';
+let messages = []; // { role, content }
+let lastRawReq = null;
+let lastRawRes = null;
+let abortCtrl = null;
+
+// ═══════════════════════════════════════
+//  Config
+// ═══════════════════════════════════════
+const $=id=>document.getElementById(id);
+function cfg(){return{protocol:$('cfg-protocol').value,url:$('cfg-url').value.replace(/\/$/,''),key:$('cfg-key').value,model:$('cfg-model').value}}
+function saveConfig(){localStorage.setItem('llm-pg',JSON.stringify({...cfg(),preset:currentPreset,sys:$('sys-prompt').value}))}
+function loadConfig(){
+  try{
+    const s=JSON.parse(localStorage.getItem('llm-pg'));if(!s)return;
+    if(s.preset){currentPreset=s.preset;applyPreset(s.preset,false)}
+    if(s.url)$('cfg-url').value=s.url;
+    if(s.key)$('cfg-key').value=s.key;
+    if(s.model)$('cfg-model').value=s.model;
+    if(s.protocol)$('cfg-protocol').value=s.protocol;
+    if(s.sys)$('sys-prompt').value=s.sys;
+  }catch{}
+}
+
+function applyPreset(name,clear=true){
+  currentPreset=name;
+  const p=PRESETS[name];if(!p)return;
+  $('cfg-protocol').value=p.protocol;
+  $('cfg-url').value=p.url;
+  $('cfg-model').value=p.model;
+  document.querySelectorAll('.preset-btn').forEach(b=>b.classList.toggle('active',b.dataset.preset===name));
+  saveConfig();
+}
+
+document.querySelectorAll('.preset-btn').forEach(b=>{
+  b.addEventListener('click',()=>applyPreset(b.dataset.preset));
+});
+['cfg-protocol','cfg-url','cfg-key','cfg-model'].forEach(id=>{
+  $(id).addEventListener('change',saveConfig);
+  $(id).addEventListener('input',saveConfig);
+});
+
+// Parameter sliders
+['p-temp','p-max','p-topp'].forEach(id=>{
+  $(id).addEventListener('input',()=>{$(`${id}-val`).textContent=$(id).value});
+});
+
+// Toggle sections
+window.toggleSection=function(id,btn){
+  const el=$(id);el.classList.toggle('hidden');
+  if(btn)btn.classList.toggle('open');
+};
+
+// ═══════════════════════════════════════
+//  Chat rendering
+// ═══════════════════════════════════════
+function renderMessages(){
+  const el=$('chat-messages');
+  if(!messages.length){
+    el.innerHTML='<div class="text-center text-xs text-gray-400 py-8">Click "Hello Test" or type a message to start</div>';
+    return;
+  }
+  el.innerHTML=messages.map((m,i)=>`
+    <div class="flex ${m.role==='user'?'justify-end':'justify-start'}">
+      <div class="chat-msg ${m.role==='user'?'msg-user':'msg-bot'}">
+        <div>${escHtml(m.content)}</div>
+        ${m.meta?`<div class="msg-meta">${m.meta}</div>`:''}
+      </div>
+    </div>
+  `).join('');
+  scrollChat();
+}
+
+function scrollChat(){const el=$('chat-area');el.scrollTop=el.scrollHeight}
+
+function addMsg(role,content,meta=''){messages.push({role,content,meta});renderMessages()}
+
+function updateLastBot(content,meta){
+  const last=messages[messages.length-1];
+  if(last&&last.role==='assistant'){last.content=content;if(meta)last.meta=meta;renderMessages()}
+}
+
+function escHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+// ═══════════════════════════════════════
+//  API Call
+// ═══════════════════════════════════════
+async function callLLM(userMsg){
+  const c=cfg();
+  if(!c.url||!c.key||!c.model){alert('Please configure URL, API Key and Model');return}
+
+  addMsg('user',userMsg);
+  addMsg('assistant','');
+
+  const streaming=$('p-stream').checked;
+  const temp=parseFloat($('p-temp').value);
+  const maxTok=parseInt($('p-max').value);
+  const topP=parseFloat($('p-topp').value);
+  const sys=$('sys-prompt').value.trim();
+
+  // Build messages for API (exclude meta)
+  const apiMsgs=messages.filter(m=>m.role==='user'||m.role==='assistant').slice(0,-1) // exclude the empty assistant
+    .map(m=>({role:m.role,content:m.content}));
+
+  let url,headers,body;
+
+  if(c.protocol==='anthropic'){
+    url=`${c.url}/messages`;
+    headers={'x-api-key':c.key,'anthropic-version':'2023-06-01','content-type':'application/json','anthropic-dangerous-direct-browser-access':'true'};
+    body={model:c.model,messages:apiMsgs,max_tokens:maxTok,temperature:temp,top_p:topP};
+    if(sys)body.system=sys;
+    if(streaming)body.stream=true;
+  }else{
+    url=`${c.url}/chat/completions`;
+    headers={'Authorization':`Bearer ${c.key}`,'Content-Type':'application/json'};
+    const msgs=sys?[{role:'system',content:sys},...apiMsgs]:apiMsgs;
+    body={model:c.model,messages:msgs,max_tokens:maxTok,temperature:temp,top_p:topP};
+    if(streaming)body.stream=true;
+  }
+
+  lastRawReq=JSON.stringify(body,null,2);
+  $('raw-req').textContent=lastRawReq;
+
+  const start=performance.now();
+  abortCtrl=new AbortController();
+  $('btn-send').disabled=true;
+  $('btn-send').textContent='...';
+
+  try{
+    const res=await fetch(url,{method:'POST',headers,body:JSON.stringify(body),signal:abortCtrl.signal});
+
+    if(!res.ok){
+      const err=await res.text();
+      lastRawRes=err;
+      $('raw-res').textContent=err;
+      updateLastBot(`Error ${res.status}: ${err}`);
+      return;
+    }
+
+    if(streaming){
+      await handleStream(res,c.protocol,start);
+    }else{
+      const data=await res.json();
+      lastRawRes=JSON.stringify(data,null,2);
+      $('raw-res').textContent=lastRawRes;
+      const elapsed=Math.round(performance.now()-start);
+
+      let text='',usage='';
+      if(c.protocol==='anthropic'){
+        text=data.content?.[0]?.text||'';
+        if(data.usage)usage=`${data.usage.input_tokens}+${data.usage.output_tokens} tok`;
+      }else{
+        text=data.choices?.[0]?.message?.content||'';
+        if(data.usage)usage=`${data.usage.prompt_tokens}+${data.usage.completion_tokens} tok`;
+      }
+      updateLastBot(text,`${elapsed}ms${usage?' · '+usage:''}`);
+    }
+  }catch(e){
+    if(e.name!=='AbortError'){
+      updateLastBot(`Error: ${e.message}`);
+      lastRawRes=e.message;$('raw-res').textContent=e.message;
+    }
+  }finally{
+    $('btn-send').disabled=false;
+    $('btn-send').textContent='Send';
+    abortCtrl=null;
+  }
+}
+
+// ═══════════════════════════════════════
+//  Streaming
+// ═══════════════════════════════════════
+async function handleStream(res,protocol,start){
+  const reader=res.body.getReader();
+  const decoder=new TextDecoder();
+  let full='';
+  let rawChunks='';
+  let usage='';
+  let buf='';
+
+  while(true){
+    const{done,value}=await reader.read();
+    if(done)break;
+    buf+=decoder.decode(value,{stream:true});
+
+    const lines=buf.split('\n');
+    buf=lines.pop()||'';
+
+    for(const line of lines){
+      if(!line.startsWith('data: '))continue;
+      const data=line.slice(6).trim();
+      if(data==='[DONE]')continue;
+      rawChunks+=data+'\n';
+
+      try{
+        const j=JSON.parse(data);
+
+        if(protocol==='anthropic'){
+          // Anthropic streaming events
+          if(j.type==='content_block_delta'&&j.delta?.text){
+            full+=j.delta.text;
+          }else if(j.type==='message_delta'&&j.usage){
+            usage=`${j.usage.output_tokens} tok`;
+          }else if(j.type==='message_start'&&j.message?.usage){
+            usage=`${j.message.usage.input_tokens} in`;
+          }
+        }else{
+          // OpenAI streaming
+          const delta=j.choices?.[0]?.delta;
+          if(delta?.content)full+=delta.content;
+          if(j.usage){
+            usage=`${j.usage.prompt_tokens||0}+${j.usage.completion_tokens||0} tok`;
+          }
+        }
+        const elapsed=Math.round(performance.now()-start);
+        updateLastBot(full,`${elapsed}ms${usage?' · '+usage:''}`);
+      }catch{}
+    }
+  }
+
+  lastRawRes=rawChunks||'(streamed)';
+  $('raw-res').textContent=lastRawRes;
+}
+
+// ═══════════════════════════════════════
+//  Actions
+// ═══════════════════════════════════════
+window.send=function(){
+  const input=$('msg-input');
+  const text=input.value.trim();
+  if(!text)return;
+  input.value='';
+  callLLM(text);
+};
+
+window.helloTest=function(){
+  $('msg-input').value='';
+  callLLM('Hello');
+};
+
+window.clearChat=function(){
+  messages=[];renderMessages();
+  lastRawReq=null;lastRawRes=null;
+  $('raw-req').textContent='—';
+  $('raw-res').textContent='—';
+  if(abortCtrl){abortCtrl.abort();abortCtrl=null}
+};
+
+// ═══════════════════════════════════════
+//  Fetch Models
+// ═══════════════════════════════════════
+$('btn-models').addEventListener('click',async()=>{
+  const c=cfg();
+  if(!c.url||!c.key){alert('Please configure URL and API Key');return}
+
+  const modal=$('models-modal');
+  const list=$('models-list');
+  list.innerHTML='<div class="flex justify-center py-4"><div class="spinner"></div></div>';
+  modal.classList.remove('hidden');
+
+  try{
+    const headers=c.protocol==='anthropic'
+      ?{'x-api-key':c.key,'anthropic-version':'2023-06-01'}
+      :{'Authorization':`Bearer ${c.key}`};
+
+    const res=await fetch(`${c.url}/models`,{headers});
+    const data=await res.json();
+    const models=data.data||data.models||[];
+
+    if(!models.length){list.innerHTML='<div class="px-4 py-4 text-gray-400 text-center">No models found</div>';return}
+
+    list.innerHTML=models.sort((a,b)=>(a.id||a.name||'').localeCompare(b.id||b.name||'')).map(m=>{
+      const id=m.id||m.name||'';
+      return`<button class="w-full text-left px-4 py-2 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors" onclick="selectModel('${id}')">${id}</button>`;
+    }).join('');
+  }catch(e){
+    list.innerHTML=`<div class="px-4 py-4 text-red-500 text-center">${e.message}</div>`;
+  }
+});
+
+window.selectModel=function(id){
+  $('cfg-model').value=id;
+  $('models-modal').classList.add('hidden');
+  saveConfig();
+};
+
+// ═══════════════════════════════════════
+//  Init
+// ═══════════════════════════════════════
+loadConfig();
+  </script>
+</body>
+</html>

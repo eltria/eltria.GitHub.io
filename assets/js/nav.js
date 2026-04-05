@@ -23,6 +23,7 @@ export const TOOLS = [
   { name: 'Pastebin', icon: '📄', path: '/tools/pastebin/', keywords: 'paste share code snippet gist' },
   { name: 'Poll', icon: '📊', path: '/tools/poll/', keywords: 'poll vote survey question' },
   { name: 'Life-Style API', icon: 'API', path: '/tools/life-style-api/', keywords: 'life style api rest todo wardrobe food billsplit knowledge chat layeros' },
+  { name: 'LLM Playground', icon: '🤖', path: '/tools/llm-playground/', keywords: 'llm ai chat gpt claude anthropic openai deepseek test playground' },
 ];
 
 const PAGES = [
