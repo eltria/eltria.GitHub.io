@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agent Platform — Architecture Deep Dive</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --blue: #2563EB; --blue-light: #EFF6FF; --blue-mid: #BFDBFE; --blue-dark: #1E40AF;
+  --purple: #7C3AED; --purple-light: #F5F3FF; --purple-mid: #DDD6FE; --purple-dark: #5B21B6;
+  --teal: #0D9488; --teal-light: #F0FDFA; --teal-mid: #99F6E4; --teal-dark: #115E59;
+  --coral: #EA580C; --coral-light: #FFF7ED; --coral-mid: #FED7AA; --coral-dark: #9A3412;
+  --amber: #D97706; --amber-light: #FFFBEB; --amber-mid: #FDE68A; --amber-dark: #92400E;
+  --green: #16A34A; --green-light: #F0FDF4; --green-mid: #BBF7D0; --green-dark: #166534;
+  --gray: #64748B; --gray-light: #F8FAFC; --gray-mid: #E2E8F0; --gray-dark: #334155;
+  --red: #DC2626; --red-light: #FEF2F2;
+  --pink: #DB2777; --pink-light: #FDF2F8;
+  --text: #0F172A; --text2: #475569; --text3: #94A3B8;
+  --bg: #FFFFFF; --bg2: #F8FAFC; --border: #E2E8F0;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'DM Sans', sans-serif; color: var(--text); background: var(--bg); -webkit-font-smoothing: antialiased; }
+
+/* ===== HERO ===== */
+.hero {
+  position: relative; overflow: hidden;
+  padding: 100px 40px 80px; text-align: center;
+  background: linear-gradient(180deg, #F0F4FF 0%, #fff 100%);
+}
+.hero::before {
+  content: ''; position: absolute; inset: 0; opacity: .35;
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(37,99,235,.12) 0, transparent 50%),
+    radial-gradient(circle at 80% 70%, rgba(124,58,237,.1) 0, transparent 50%),
+    radial-gradient(circle at 50% 50%, rgba(13,148,136,.08) 0, transparent 60%);
+}
+.hero-grid {
+  position: absolute; inset: 0; opacity: .08;
+  background-image: linear-gradient(var(--blue) 1px, transparent 1px), linear-gradient(90deg, var(--blue) 1px, transparent 1px);
+  background-size: 60px 60px;
+}
+.hero h1 { position: relative; font-family: 'Playfair Display', serif; font-size: 64px; font-weight: 800; letter-spacing: -2px; line-height: 1.1; }
+.hero h1 span { background: linear-gradient(135deg, var(--blue), var(--purple), var(--teal)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.hero-sub { position: relative; font-size: 20px; color: var(--text2); margin-top: 16px; font-weight: 300; }
+.hero-badges { position: relative; display: flex; gap: 12px; justify-content: center; margin-top: 28px; flex-wrap: wrap; }
+.badge { font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 500; padding: 6px 16px; border-radius: 100px; border: 1px solid; }
+.badge-blue { color: var(--blue); border-color: var(--blue-mid); background: var(--blue-light); }
+.badge-purple { color: var(--purple); border-color: var(--purple-mid); background: var(--purple-light); }
+.badge-teal { color: var(--teal); border-color: var(--teal-mid); background: var(--teal-light); }
+.badge-amber { color: var(--amber); border-color: var(--amber-mid); background: var(--amber-light); }
+
+/* ===== LAYOUT ===== */
+.container { max-width: 1200px; margin: 0 auto; padding: 0 32px; }
+section { padding: 80px 0; }
+section + section { border-top: 1px solid var(--border); }
+.section-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 600; letter-spacing: 2.5px; text-transform: uppercase; color: var(--text3); margin-bottom: 8px; }
+.section-title { font-family: 'Playfair Display', serif; font-size: 36px; font-weight: 700; letter-spacing: -1px; margin-bottom: 12px; }
+.section-desc { font-size: 16px; color: var(--text2); max-width: 600px; line-height: 1.7; margin-bottom: 48px; }
+
+/* ===== SVG DIAGRAMS ===== */
+.diagram-wrap { background: var(--bg2); border: 1px solid var(--border); border-radius: 16px; padding: 40px; margin-bottom: 40px; overflow-x: auto; }
+.diagram-wrap svg { display: block; margin: 0 auto; }
+.diagram-caption { text-align: center; font-size: 13px; color: var(--text3); margin-top: 16px; font-family: 'JetBrains Mono', monospace; }
+
+/* Animated elements */
+@keyframes dashFlow { to { stroke-dashoffset: -20; } }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes pulse2 { 0%,100% { r: 4; opacity: .8; } 50% { r: 6; opacity: 1; } }
+@keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: .4; } }
+.flow-dash { stroke-dasharray: 8 6; animation: dashFlow 1.2s linear infinite; }
+.pulse-dot { animation: pulse2 2s ease-in-out infinite; }
+.blink { animation: blink 2s ease-in-out infinite; }
+
+/* ===== CARDS ===== */
+.card-grid { display: grid; gap: 20px; }
+.card-grid-3 { grid-template-columns: repeat(3, 1fr); }
+.card-grid-2 { grid-template-columns: repeat(2, 1fr); }
+@media (max-width: 800px) { .card-grid-3, .card-grid-2 { grid-template-columns: 1fr; } }
+.card { border-radius: 14px; padding: 28px; border: 1px solid var(--border); position: relative; overflow: hidden; transition: transform .2s, box-shadow .2s; }
+.card:hover { transform: translateY(-3px); box-shadow: 0 12px 40px rgba(0,0,0,.06); }
+.card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+.card .card-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 700; margin-bottom: 16px; }
+.card h3 { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+.card p { font-size: 14px; color: var(--text2); line-height: 1.7; }
+.card .mono { font-family: 'JetBrains Mono', monospace; font-size: 12px; margin-top: 12px; padding: 8px 12px; border-radius: 8px; background: var(--bg2); color: var(--text2); }
+
+.card-blue::before { background: linear-gradient(90deg, var(--blue), #60A5FA); }
+.card-blue .card-icon { background: var(--blue-light); color: var(--blue); }
+.card-purple::before { background: linear-gradient(90deg, var(--purple), #A78BFA); }
+.card-purple .card-icon { background: var(--purple-light); color: var(--purple); }
+.card-teal::before { background: linear-gradient(90deg, var(--teal), #2DD4BF); }
+.card-teal .card-icon { background: var(--teal-light); color: var(--teal); }
+.card-coral::before { background: linear-gradient(90deg, var(--coral), #FB923C); }
+.card-coral .card-icon { background: var(--coral-light); color: var(--coral); }
+.card-amber::before { background: linear-gradient(90deg, var(--amber), #FBBF24); }
+.card-amber .card-icon { background: var(--amber-light); color: var(--amber); }
+.card-green::before { background: linear-gradient(90deg, var(--green), #4ADE80); }
+.card-green .card-icon { background: var(--green-light); color: var(--green); }
+.card-gray::before { background: linear-gradient(90deg, var(--gray), #94A3B8); }
+.card-gray .card-icon { background: var(--gray-light); color: var(--gray); }
+
+/* ===== TIMELINE ===== */
+.timeline { position: relative; padding-left: 40px; }
+.timeline::before { content: ''; position: absolute; left: 15px; top: 0; bottom: 0; width: 2px; background: linear-gradient(180deg, var(--blue-mid), var(--purple-mid), var(--teal-mid)); }
+.tl-item { position: relative; margin-bottom: 32px; }
+.tl-item::before { content: ''; position: absolute; left: -33px; top: 6px; width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--blue); background: #fff; }
+.tl-item:nth-child(2)::before { border-color: var(--purple); }
+.tl-item:nth-child(3)::before { border-color: var(--teal); }
+.tl-item:nth-child(4)::before { border-color: var(--coral); }
+.tl-item:nth-child(5)::before { border-color: var(--amber); }
+.tl-item:nth-child(6)::before { border-color: var(--green); }
+.tl-time { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text3); margin-bottom: 4px; }
+.tl-title { font-weight: 600; font-size: 15px; margin-bottom: 4px; }
+.tl-desc { font-size: 13px; color: var(--text2); }
+
+/* ===== PROTOCOL TABLE ===== */
+.proto-table { width: 100%; border-collapse: separate; border-spacing: 0; border-radius: 12px; overflow: hidden; border: 1px solid var(--border); }
+.proto-table th { background: var(--bg2); font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--text3); padding: 14px 20px; text-align: left; border-bottom: 1px solid var(--border); }
+.proto-table td { padding: 14px 20px; font-size: 14px; border-bottom: 1px solid var(--border); }
+.proto-table tr:last-child td { border-bottom: none; }
+.proto-table code { font-family: 'JetBrains Mono', monospace; font-size: 12px; background: var(--blue-light); color: var(--blue-dark); padding: 2px 8px; border-radius: 4px; }
+
+/* ===== STATS ===== */
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-top: 48px; }
+@media (max-width: 700px) { .stats { grid-template-columns: repeat(2, 1fr); } }
+.stat { text-align: center; padding: 28px 16px; border-radius: 14px; background: var(--bg2); border: 1px solid var(--border); }
+.stat-num { font-family: 'Playfair Display', serif; font-size: 36px; font-weight: 700; }
+.stat-label { font-size: 13px; color: var(--text2); margin-top: 4px; }
+
+/* ===== MISC ===== */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; align-items: start; }
+@media (max-width: 800px) { .two-col { grid-template-columns: 1fr; } }
+.code-block { font-family: 'JetBrains Mono', monospace; font-size: 12px; background: #0F172A; color: #E2E8F0; padding: 24px; border-radius: 12px; overflow-x: auto; line-height: 1.8; }
+.code-block .kw { color: #A78BFA; }
+.code-block .str { color: #34D399; }
+.code-block .cm { color: #64748B; }
+.code-block .fn { color: #60A5FA; }
+.tag-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+.tag { font-family: 'JetBrains Mono', monospace; font-size: 11px; padding: 3px 10px; border-radius: 6px; }
+.tag-b { background: var(--blue-light); color: var(--blue-dark); }
+.tag-p { background: var(--purple-light); color: var(--purple-dark); }
+.tag-t { background: var(--teal-light); color: var(--teal-dark); }
+.tag-c { background: var(--coral-light); color: var(--coral-dark); }
+.tag-a { background: var(--amber-light); color: var(--amber-dark); }
+.tag-g { background: var(--green-light); color: var(--green-dark); }
+
+footer { text-align: center; padding: 48px 32px; color: var(--text3); font-size: 13px; border-top: 1px solid var(--border); }
+</style>
+</head>
+<body>
+
+<!-- ===== HERO ===== -->
+<div class="hero">
+  <div class="hero-grid"></div>
+  <h1><span>Agent Platform</span></h1>
+  <p class="hero-sub">Multi-Protocol AI Agent Architecture — Deep Dive</p>
+  <div class="hero-badges">
+    <span class="badge badge-blue">Go 1.25</span>
+    <span class="badge badge-purple">24 Files</span>
+    <span class="badge badge-teal">6 Layers</span>
+    <span class="badge badge-amber">13 Tools</span>
+  </div>
+</div>
+
+<!-- ===== 1. LAYERED ARCHITECTURE ===== -->
+<section>
+<div class="container">
+  <div class="section-label">01 — System Overview</div>
+  <div class="section-title">分层架构</div>
+  <div class="section-desc">六层架构设计，从用户接入到数据持久化，每层职责清晰，通过标准接口解耦。</div>
+
+  <div class="diagram-wrap">
+    <svg viewBox="0 0 960 520" width="100%" xmlns="http://www.w3.org/2000/svg">
+      <!-- Defs -->
+      <defs>
+        <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M1 1L9 5L1 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </marker>
+        <linearGradient id="gB" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#2563EB"/><stop offset="100%" stop-color="#60A5FA"/></linearGradient>
+        <linearGradient id="gP" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#7C3AED"/><stop offset="100%" stop-color="#A78BFA"/></linearGradient>
+        <linearGradient id="gT" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#0D9488"/><stop offset="100%" stop-color="#2DD4BF"/></linearGradient>
+        <linearGradient id="gC" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#EA580C"/><stop offset="100%" stop-color="#FB923C"/></linearGradient>
+        <linearGradient id="gA" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#D97706"/><stop offset="100%" stop-color="#FBBF24"/></linearGradient>
+        <linearGradient id="gG" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#64748B"/><stop offset="100%" stop-color="#94A3B8"/></linearGradient>
+        <linearGradient id="flowG" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2563EB" stop-opacity="0"/><stop offset="50%" stop-color="#7C3AED" stop-opacity=".7"/><stop offset="100%" stop-color="#0D9488" stop-opacity="0"/></linearGradient>
+      </defs>
+
+      <!-- Layer 1: Channels -->
+      <rect x="80" y="20" width="800" height="64" rx="12" fill="#EFF6FF" stroke="#BFDBFE" stroke-width="1"/>
+      <rect x="80" y="20" width="800" height="4" rx="2" fill="url(#gB)"/>
+      <text x="110" y="58" font-family="JetBrains Mono" font-size="10" fill="#2563EB" font-weight="600" letter-spacing="1.5">CHANNELS</text>
+      <rect x="230" y="34" width="180" height="36" rx="8" fill="#fff" stroke="#BFDBFE" stroke-width=".8"/>
+      <text x="320" y="57" text-anchor="middle" font-family="DM Sans" font-size="13" fill="#1E40AF" font-weight="500">HTTP API :3100</text>
+      <rect x="430" y="34" width="180" height="36" rx="8" fill="#fff" stroke="#BFDBFE" stroke-width=".8"/>
+      <text x="520" y="57" text-anchor="middle" font-family="DM Sans" font-size="13" fill="#1E40AF" font-weight="500">Matrix Chat</text>
+      <rect x="630" y="34" width="220" height="36" rx="8" fill="#fff" stroke="#BFDBFE" stroke-width=".8"/>
+      <text x="740" y="57" text-anchor="middle" font-family="DM Sans" font-size="13" fill="#1E40AF" font-weight="500">Voice Call (WebRTC)</text>
+
+      <!-- Flow arrows -->
+      <line x1="480" y1="84" x2="480" y2="108" stroke="url(#flowG)" stroke-width="2" class="flow-dash"/>
+
+      <!-- Layer 2: Agent -->
+      <rect x="200" y="112" width="560" height="64" rx="12" fill="#F5F3FF" stroke="#DDD6FE" stroke-width="1"/>
+      <rect x="200" y="112" width="560" height="4" rx="2" fill="url(#gP)"/>
+      <text x="230" y="150" font-family="JetBrains Mono" font-size="10" fill="#7C3AED" font-weight="600" letter-spacing="1.5">AGENT LOOP</text>
+      <text x="400" y="150" font-family="DM Sans" font-size="13" fill="#5B21B6" font-weight="500">Multi-turn Tool-Use · max 10 rounds · streaming callbacks</text>
+
+      <!-- Flow arrows split -->
+      <line x1="380" y1="176" x2="280" y2="210" stroke="#7C3AED" stroke-width="1.2" stroke-opacity=".4" marker-end="url(#arr)"/>
+      <line x1="580" y1="176" x2="680" y2="210" stroke="#7C3AED" stroke-width="1.2" stroke-opacity=".4" marker-end="url(#arr)"/>
+
+      <!-- Layer 3a: Adapter -->
+      <rect x="80" y="214" width="360" height="64" rx="12" fill="#F0FDFA" stroke="#99F6E4" stroke-width="1"/>
+      <rect x="80" y="214" width="360" height="4" rx="2" fill="url(#gT)"/>
+      <text x="110" y="252" font-family="JetBrains Mono" font-size="10" fill="#0D9488" font-weight="600" letter-spacing="1.5">LLM ADAPTER</text>
+      <text x="280" y="252" font-family="DM Sans" font-size="13" fill="#115E59" font-weight="500">Anthropic SSE · 8192 tokens · multi-modal</text>
+
+      <!-- Layer 3b: Tools -->
+      <rect x="460" y="214" width="420" height="64" rx="12" fill="#FFF7ED" stroke="#FED7AA" stroke-width="1"/>
+      <rect x="460" y="214" width="420" height="4" rx="2" fill="url(#gC)"/>
+      <text x="490" y="252" font-family="JetBrains Mono" font-size="10" fill="#EA580C" font-weight="600" letter-spacing="1.5">TOOLS</text>
+      <rect x="560" y="232" width="68" height="30" rx="6" fill="#fff" stroke="#FED7AA" stroke-width=".8"/>
+      <text x="594" y="252" text-anchor="middle" font-family="JetBrains Mono" font-size="11" fill="#9A3412">Bash</text>
+      <rect x="638" y="232" width="88" height="30" rx="6" fill="#fff" stroke="#FED7AA" stroke-width=".8"/>
+      <text x="682" y="252" text-anchor="middle" font-family="JetBrains Mono" font-size="11" fill="#9A3412">MS Todo</text>
+      <rect x="736" y="232" width="120" height="30" rx="6" fill="#fff" stroke="#FED7AA" stroke-width=".8"/>
+      <text x="796" y="252" text-anchor="middle" font-family="JetBrains Mono" font-size="11" fill="#9A3412">Feishu ×10</text>
+
+      <!-- Flow arrows -->
+      <line x1="480" y1="278" x2="480" y2="312" stroke="url(#flowG)" stroke-width="2" class="flow-dash"/>
+
+      <!-- Layer 4: Speech -->
+      <rect x="140" y="316" width="680" height="64" rx="12" fill="#FFFBEB" stroke="#FDE68A" stroke-width="1"/>
+      <rect x="140" y="316" width="680" height="4" rx="2" fill="url(#gA)"/>
+      <text x="170" y="354" font-family="JetBrains Mono" font-size="10" fill="#D97706" font-weight="600" letter-spacing="1.5">SPEECH</text>
+      <rect x="290" y="334" width="200" height="30" rx="6" fill="#fff" stroke="#FDE68A" stroke-width=".8"/>
+      <text x="390" y="354" text-anchor="middle" font-family="DM Sans" font-size="13" fill="#92400E" font-weight="500">VolcEngine ASR</text>
+      <rect x="510" y="334" width="200" height="30" rx="6" fill="#fff" stroke="#FDE68A" stroke-width=".8"/>
+      <text x="610" y="354" text-anchor="middle" font-family="DM Sans" font-size="13" fill="#92400E" font-weight="500">VolcEngine TTS V3</text>
+
+      <!-- Flow arrows -->
+      <line x1="480" y1="380" x2="480" y2="414" stroke="url(#flowG)" stroke-width="2" class="flow-dash"/>
+
+      <!-- Layer 5: Foundation -->
+      <rect x="140" y="418" width="680" height="64" rx="12" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
+      <rect x="140" y="418" width="680" height="4" rx="2" fill="url(#gG)"/>
+      <text x="170" y="456" font-family="JetBrains Mono" font-size="10" fill="#64748B" font-weight="600" letter-spacing="1.5">FOUNDATION</text>
+      <rect x="320" y="436" width="130" height="30" rx="6" fill="#fff" stroke="#E2E8F0" stroke-width=".8"/>
+      <text x="385" y="456" text-anchor="middle" font-family="DM Sans" font-size="13" fill="#334155" font-weight="500">SQLite</text>
+      <rect x="470" y="436" width="130" height="30" rx="6" fill="#fff" stroke="#E2E8F0" stroke-width=".8"/>
+      <text x="535" y="456" text-anchor="middle" font-family="DM Sans" font-size="13" fill="#334155" font-weight="500">Config</text>
+      <rect x="620" y="436" width="130" height="30" rx="6" fill="#fff" stroke="#E2E8F0" stroke-width=".8"/>
+      <text x="685" y="456" text-anchor="middle" font-family="DM Sans" font-size="13" fill="#334155" font-weight="500">Skills</text>
+
+      <!-- Animated pulse dots on flow lines -->
+      <circle cx="480" cy="96" r="4" fill="#7C3AED" class="pulse-dot"/>
+      <circle cx="480" cy="296" r="4" fill="#D97706" class="pulse-dot" style="animation-delay:.5s"/>
+      <circle cx="480" cy="396" r="4" fill="#64748B" class="pulse-dot" style="animation-delay:1s"/>
+    </svg>
+    <p class="diagram-caption">Fig 1. Layered architecture — data flows top-down through 6 decoupled layers</p>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="stat-num" style="color:var(--blue)">3</div><div class="stat-label">Communication Channels</div></div>
+    <div class="stat"><div class="stat-num" style="color:var(--coral)">13</div><div class="stat-label">Registered Tools</div></div>
+    <div class="stat"><div class="stat-num" style="color:var(--purple)">24</div><div class="stat-label">Go Source Files</div></div>
+    <div class="stat"><div class="stat-num" style="color:var(--teal)">10</div><div class="stat-label">Max Tool-Use Rounds</div></div>
+  </div>
+</div>
+</section>
+
+<!-- ===== 2. CHANNELS ===== -->
+<section>
+<div class="container">
+  <div class="section-label">02 — Input / Output</div>
+  <div class="section-title">通道层 Channels</div>
+  <div class="section-desc">三种通信协议接入，从简单的 REST API 到实时语音通话，统一汇入 Agent Loop。</div>
+
+  <div class="card-grid card-grid-3">
+    <div class="card card-blue">
+      <div class="card-icon">H</div>
+      <h3>HTTP API</h3>
+      <p>轻量级 REST 接口，适合自动化集成。支持健康检查、消息发送和会话管理。</p>
+      <div class="mono">POST /api/chat → JSON response</div>
+      <div class="tag-row">
+        <span class="tag tag-b">:3100</span>
+        <span class="tag tag-b">REST</span>
+        <span class="tag tag-b">JSON</span>
+      </div>
+    </div>
+    <div class="card card-purple">
+      <div class="card-icon">M</div>
+      <h3>Matrix Chat</h3>
+      <p>全功能 Matrix 客户端。支持文字消息、语音消息转写、Markdown 渲染、流式消息编辑。</p>
+      <div class="mono">Long-polling sync · 500ms throttle</div>
+      <div class="tag-row">
+        <span class="tag tag-p">Text</span>
+        <span class="tag tag-p">Audio</span>
+        <span class="tag tag-p">Markdown</span>
+        <span class="tag tag-p">Streaming</span>
+      </div>
+    </div>
+    <div class="card card-teal">
+      <div class="card-icon">V</div>
+      <h3>Voice Call</h3>
+      <p>基于 Matrix Element Call (MSC3401) + LiveKit WebRTC 的实时语音通话，支持 VAD 分段和 Opus 编解码。</p>
+      <div class="mono">Opus 48kHz → PCM 16kHz → ASR → TTS</div>
+      <div class="tag-row">
+        <span class="tag tag-t">WebRTC</span>
+        <span class="tag tag-t">LiveKit</span>
+        <span class="tag tag-t">Opus</span>
+        <span class="tag tag-t">VAD</span>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ===== 3. AGENT LOOP ===== -->
+<section>
+<div class="container">
+  <div class="section-label">03 — Core Engine</div>
+  <div class="section-title">Agent 编排循环</div>
+  <div class="section-desc">核心 Agentic Loop 负责多轮对话和工具调用编排，最多执行 10 轮推理-执行循环。</div>
+
+  <div class="diagram-wrap">
+    <svg viewBox="0 0 960 340" width="100%" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="arr2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M1 1L9 5L1 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </marker>
+      </defs>
+
+      <!-- User Input -->
+      <rect x="30" y="140" width="120" height="48" rx="24" fill="#EFF6FF" stroke="#2563EB" stroke-width="1.2"/>
+      <text x="90" y="169" text-anchor="middle" font-family="DM Sans" font-size="13" fill="#1E40AF" font-weight="600">User Input</text>
+
+      <!-- Arrow -->
+      <line x1="150" y1="164" x2="190" y2="164" stroke="#2563EB" stroke-width="1.2" marker-end="url(#arr2)"/>
+
+      <!-- Session Load -->
+      <rect x="194" y="140" width="120" height="48" rx="10" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
+      <text x="254" y="160" text-anchor="middle" font-family="DM Sans" font-size="12" fill="#64748B" font-weight="500">Session</text>
+      <text x="254" y="176" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#94A3B8">Load(key)</text>
+
+      <!-- Arrow -->
+      <line x1="314" y1="164" x2="354" y2="164" stroke="#64748B" stroke-width="1.2" marker-end="url(#arr2)"/>
+
+      <!-- LLM Box -->
+      <rect x="358" y="120" width="160" height="88" rx="12" fill="#F5F3FF" stroke="#7C3AED" stroke-width="1.5"/>
+      <text x="438" y="150" text-anchor="middle" font-family="DM Sans" font-size="14" fill="#5B21B6" font-weight="600">LLM 推理</text>
+      <text x="438" y="168" text-anchor="middle" font-family="JetBrains Mono" font-size="11" fill="#7C3AED">SSE Streaming</text>
+      <text x="438" y="196" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#A78BFA">8192 max tokens</text>
+
+      <!-- Arrow down: Tool calls? -->
+      <line x1="438" y1="208" x2="438" y2="248" stroke="#7C3AED" stroke-width="1.2" marker-end="url(#arr2)"/>
+      <text x="460" y="234" font-family="DM Sans" font-size="11" fill="#7C3AED">tool_calls?</text>
+
+      <!-- Decision diamond -->
+      <polygon points="438,252 468,274 438,296 408,274" fill="#F5F3FF" stroke="#7C3AED" stroke-width="1.2"/>
+      <text x="438" y="278" text-anchor="middle" font-family="DM Sans" font-size="11" fill="#5B21B6" font-weight="600">?</text>
+
+      <!-- No → Output -->
+      <line x1="468" y1="274" x2="560" y2="274" stroke="#16A34A" stroke-width="1.2" marker-end="url(#arr2)"/>
+      <text x="510" y="268" font-family="DM Sans" font-size="11" fill="#16A34A" font-weight="500">No</text>
+
+      <rect x="564" y="252" width="120" height="44" rx="22" fill="#F0FDF4" stroke="#16A34A" stroke-width="1.2"/>
+      <text x="624" y="279" text-anchor="middle" font-family="DM Sans" font-size="13" fill="#166534" font-weight="600">Return Text</text>
+
+      <!-- Yes → Execute tools -->
+      <line x1="438" y1="296" x2="438" y2="320" stroke="#EA580C" stroke-width="1.2"/>
+      <text x="455" y="314" font-family="DM Sans" font-size="11" fill="#EA580C" font-weight="500">Yes</text>
+
+      <!-- Tool Execution -->
+      <rect x="358" y="290" width="160" height="0" rx="8" fill="none"/>
+
+      <!-- Loop back arrow -->
+      <path d="M438 320 L438 330 L700 330 L700 164 L520 164" fill="none" stroke="#EA580C" stroke-width="1.2" stroke-dasharray="6 4" marker-end="url(#arr2)"/>
+
+      <!-- Tools box on the loop -->
+      <rect x="560" y="310" width="130" height="40" rx="8" fill="#FFF7ED" stroke="#EA580C" stroke-width="1"/>
+      <text x="625" y="335" text-anchor="middle" font-family="DM Sans" font-size="12" fill="#9A3412" font-weight="500">Execute Tools</text>
+
+      <!-- Round counter -->
+      <rect x="720" y="150" width="90" height="28" rx="14" fill="#FEF2F2" stroke="#DC2626" stroke-width=".8"/>
+      <text x="765" y="169" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#DC2626" font-weight="600" class="blink">≤ 10 rounds</text>
+
+      <!-- Callback annotations -->
+      <text x="358" y="112" font-family="JetBrains Mono" font-size="9" fill="#A78BFA">OnText() · OnToolCall() · OnToolResult()</text>
+    </svg>
+    <p class="diagram-caption">Fig 2. Agent loop — multi-turn tool-use orchestration with streaming callbacks</p>
+  </div>
+
+  <div class="two-col">
+    <div>
+      <h3 style="font-size:18px;margin-bottom:16px">Streaming Callbacks</h3>
+      <p style="font-size:14px;color:var(--text2);line-height:1.8">Agent 在推理过程中通过三个回调实时通知通道层：<code style="font-family:'JetBrains Mono';font-size:12px;background:var(--purple-light);color:var(--purple-dark);padding:2px 6px;border-radius:4px">OnText</code> 传递增量文本，<code style="font-family:'JetBrains Mono';font-size:12px;background:var(--coral-light);color:var(--coral-dark);padding:2px 6px;border-radius:4px">OnToolCall</code> 通知工具调用开始，<code style="font-family:'JetBrains Mono';font-size:12px;background:var(--green-light);color:var(--green-dark);padding:2px 6px;border-radius:4px">OnToolResult</code> 返回工具执行结果。Matrix 通道利用这些回调实现流式消息编辑。</p>
+    </div>
+    <div class="code-block">
+<span class="kw">type</span> RunOptions <span class="kw">struct</span> {
+  Model        <span class="kw">string</span>
+  SystemPrompt <span class="kw">string</span>
+  Parts        []adapter.Part
+  <span class="fn">OnText</span>       <span class="kw">func</span>(<span class="kw">string</span>)
+  <span class="fn">OnToolCall</span>   <span class="kw">func</span>(name, args <span class="kw">string</span>)
+  <span class="fn">OnToolResult</span> <span class="kw">func</span>(name, result <span class="kw">string</span>)
+}
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ===== 4. DATA FLOW: TEXT ===== -->
+<section>
+<div class="container">
+  <div class="section-label">04 — Data Flow</div>
+  <div class="section-title">消息路由与数据流</div>
+  <div class="section-desc">从用户输入到最终响应，消息经过认证、会话加载、Agent 推理、工具执行等完整生命周期。</div>
+
+  <!-- Matrix Text Message Flow -->
+  <h3 style="font-size:20px;margin-bottom:24px">Matrix 文字消息流</h3>
+  <div class="diagram-wrap">
+    <svg viewBox="0 0 960 400" width="100%" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="arr3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M1 1L9 5L1 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </marker>
+      </defs>
+
+      <!-- Step 1 -->
+      <rect x="40" y="30" width="160" height="56" rx="10" fill="#EFF6FF" stroke="#2563EB" stroke-width="1"/>
+      <text x="120" y="53" text-anchor="middle" font-family="DM Sans" font-size="12" fill="#1E40AF" font-weight="600">Matrix Room</text>
+      <text x="120" y="72" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#60A5FA">m.room.message</text>
+      <line x1="200" y1="58" x2="250" y2="58" stroke="#2563EB" stroke-width="1" marker-end="url(#arr3)"/>
+
+      <!-- Step 2 -->
+      <rect x="254" y="30" width="160" height="56" rx="10" fill="#F5F3FF" stroke="#7C3AED" stroke-width="1"/>
+      <text x="334" y="53" text-anchor="middle" font-family="DM Sans" font-size="12" fill="#5B21B6" font-weight="600">syncLoop</text>
+      <text x="334" y="72" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#A78BFA">handleMessage()</text>
+      <line x1="414" y1="58" x2="464" y2="58" stroke="#7C3AED" stroke-width="1" marker-end="url(#arr3)"/>
+
+      <!-- Step 3: Placeholder -->
+      <rect x="468" y="30" width="180" height="56" rx="10" fill="#FFFBEB" stroke="#D97706" stroke-width="1"/>
+      <text x="558" y="50" text-anchor="middle" font-family="DM Sans" font-size="12" fill="#92400E" font-weight="600">Send Placeholder</text>
+      <text x="558" y="72" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#D97706">"⏳ 思考中..."</text>
+
+      <!-- Arrow down -->
+      <line x1="558" y1="86" x2="558" y2="126" stroke="#D97706" stroke-width="1" marker-end="url(#arr3)"/>
+
+      <!-- Step 4: Session Load -->
+      <rect x="468" y="130" width="180" height="48" rx="10" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
+      <text x="558" y="158" text-anchor="middle" font-family="DM Sans" font-size="12" fill="#334155" font-weight="500">Load Session History</text>
+      <line x1="558" y1="178" x2="558" y2="214" stroke="#64748B" stroke-width="1" marker-end="url(#arr3)"/>
+
+      <!-- Step 5: Agent Loop -->
+      <rect x="418" y="218" width="280" height="72" rx="12" fill="#F5F3FF" stroke="#7C3AED" stroke-width="1.5"/>
+      <text x="558" y="244" text-anchor="middle" font-family="DM Sans" font-size="14" fill="#5B21B6" font-weight="600">Agent Loop</text>
+      <text x="558" y="264" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#A78BFA">ag.Run(text, history, opts)</text>
+      <text x="558" y="280" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#A78BFA">→ streaming text + tool calls</text>
+
+      <!-- Streaming annotations -->
+      <rect x="730" y="218" width="200" height="72" rx="8" fill="none" stroke="#D97706" stroke-width=".8" stroke-dasharray="4 3"/>
+      <text x="830" y="238" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#D97706" font-weight="500">Streaming updates:</text>
+      <text x="830" y="256" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#92400E">每 500ms 编辑消息</text>
+      <text x="830" y="272" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#92400E">🔧 工具调用 → 强制更新</text>
+      <text x="830" y="288" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#92400E">✅ 工具完成 → 强制更新</text>
+
+      <!-- Arrow down -->
+      <line x1="558" y1="290" x2="558" y2="326" stroke="#7C3AED" stroke-width="1" marker-end="url(#arr3)"/>
+
+      <!-- Step 6: Save + Final Edit -->
+      <rect x="418" y="330" width="130" height="48" rx="10" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
+      <text x="483" y="358" text-anchor="middle" font-family="DM Sans" font-size="12" fill="#334155" font-weight="500">Save Session</text>
+
+      <line x1="548" y1="354" x2="588" y2="354" stroke="#64748B" stroke-width="1" marker-end="url(#arr3)"/>
+
+      <rect x="592" y="330" width="140" height="48" rx="10" fill="#F0FDF4" stroke="#16A34A" stroke-width="1.2"/>
+      <text x="662" y="350" text-anchor="middle" font-family="DM Sans" font-size="12" fill="#166534" font-weight="600">Final Edit</text>
+      <text x="662" y="368" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#16A34A">editMarkdown()</text>
+    </svg>
+    <p class="diagram-caption">Fig 3. Matrix text message flow — placeholder → streaming updates → final edit</p>
+  </div>
+
+  <!-- Voice Call Pipeline -->
+  <h3 style="font-size:20px;margin-bottom:24px;margin-top:48px">实时语音通话管线</h3>
+  <div class="diagram-wrap">
+    <svg viewBox="0 0 960 180" width="100%" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="arr4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+          <path d="M1 1L9 5L1 9" fill="none" stroke="context-stroke" stroke-width="1.8" stroke-linecap="round"/>
+        </marker>
+      </defs>
+
+      <!-- Pipeline boxes -->
+      <rect x="20" y="55" width="110" height="60" rx="8" fill="#EFF6FF" stroke="#2563EB" stroke-width="1"/>
+      <text x="75" y="78" text-anchor="middle" font-family="DM Sans" font-size="11" fill="#1E40AF" font-weight="600">Opus RTP</text>
+      <text x="75" y="96" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#60A5FA">48kHz stereo</text>
+
+      <line x1="130" y1="85" x2="155" y2="85" stroke="#2563EB" stroke-width="1.2" marker-end="url(#arr4)"/>
+
+      <rect x="158" y="55" width="110" height="60" rx="8" fill="#F5F3FF" stroke="#7C3AED" stroke-width="1"/>
+      <text x="213" y="78" text-anchor="middle" font-family="DM Sans" font-size="11" fill="#5B21B6" font-weight="600">Decode PCM</text>
+      <text x="213" y="96" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#A78BFA">16kHz mono</text>
+
+      <line x1="268" y1="85" x2="293" y2="85" stroke="#7C3AED" stroke-width="1.2" marker-end="url(#arr4)"/>
+
+      <rect x="296" y="55" width="100" height="60" rx="8" fill="#FFF7ED" stroke="#EA580C" stroke-width="1"/>
+      <text x="346" y="78" text-anchor="middle" font-family="DM Sans" font-size="11" fill="#9A3412" font-weight="600">5s Segment</text>
+      <text x="346" y="96" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#EA580C">silence filter</text>
+
+      <line x1="396" y1="85" x2="421" y2="85" stroke="#EA580C" stroke-width="1.2" marker-end="url(#arr4)"/>
+
+      <rect x="424" y="55" width="100" height="60" rx="8" fill="#FFFBEB" stroke="#D97706" stroke-width="1"/>
+      <text x="474" y="78" text-anchor="middle" font-family="DM Sans" font-size="11" fill="#92400E" font-weight="600">ASR</text>
+      <text x="474" y="96" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#D97706">PCM → 文字</text>
+
+      <line x1="524" y1="85" x2="549" y2="85" stroke="#D97706" stroke-width="1.2" marker-end="url(#arr4)"/>
+
+      <rect x="552" y="55" width="100" height="60" rx="8" fill="#F5F3FF" stroke="#7C3AED" stroke-width="1.5"/>
+      <text x="602" y="78" text-anchor="middle" font-family="DM Sans" font-size="11" fill="#5B21B6" font-weight="600">Agent</text>
+      <text x="602" y="96" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#A78BFA">LLM + Tools</text>
+
+      <line x1="652" y1="85" x2="677" y2="85" stroke="#7C3AED" stroke-width="1.2" marker-end="url(#arr4)"/>
+
+      <rect x="680" y="55" width="100" height="60" rx="8" fill="#FFFBEB" stroke="#D97706" stroke-width="1"/>
+      <text x="730" y="78" text-anchor="middle" font-family="DM Sans" font-size="11" fill="#92400E" font-weight="600">TTS</text>
+      <text x="730" y="96" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#D97706">文字 → PCM</text>
+
+      <line x1="780" y1="85" x2="805" y2="85" stroke="#D97706" stroke-width="1.2" marker-end="url(#arr4)"/>
+
+      <rect x="808" y="55" width="130" height="60" rx="8" fill="#F0FDF4" stroke="#16A34A" stroke-width="1"/>
+      <text x="873" y="78" text-anchor="middle" font-family="DM Sans" font-size="11" fill="#166534" font-weight="600">Opus Encode</text>
+      <text x="873" y="96" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#16A34A">↑48kHz · 20ms RTP</text>
+
+      <!-- Labels -->
+      <text x="75" y="40" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#94A3B8">Receive</text>
+      <text x="873" y="40" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#94A3B8">Publish</text>
+
+      <!-- Animated flow line underneath -->
+      <line x1="20" y1="140" x2="938" y2="140" stroke="#E2E8F0" stroke-width="1"/>
+      <line x1="20" y1="140" x2="938" y2="140" stroke="url(#gP)" stroke-width="2" class="flow-dash"/>
+      <text x="480" y="162" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#94A3B8">End-to-end latency: ~10-50s (v0.3.0)</text>
+    </svg>
+    <p class="diagram-caption">Fig 4. Real-time voice pipeline — Opus → PCM → ASR → Agent → TTS → Opus</p>
+  </div>
+</div>
+</section>
+
+<!-- ===== 5. STREAMING TIMELINE ===== -->
+<section style="background:var(--bg2)">
+<div class="container">
+  <div class="section-label">05 — Real-time</div>
+  <div class="section-title">流式更新时序</div>
+  <div class="section-desc">以 "帮我查日历" 为例，展示 Matrix 流式响应的完整时序。</div>
+
+  <div class="timeline">
+    <div class="tl-item">
+      <div class="tl-time">T+0ms</div>
+      <div class="tl-title">用户发送 "帮我查日历"</div>
+      <div class="tl-desc">Matrix room 收到 m.room.message 事件</div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-time">T+50ms</div>
+      <div class="tl-title">发送占位消息 "⏳ 思考中..."</div>
+      <div class="tl-desc">获取 eventID，后续通过编辑更新此消息</div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-time">T+300ms — T+1000ms</div>
+      <div class="tl-title">LLM 流式返回 · 500ms 节流更新</div>
+      <div class="tl-desc">OnText 增量回调 → textBuf 累积 → 每 500ms 编辑消息</div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-time">T+1100ms</div>
+      <div class="tl-title">🔧 工具调用 feishu_calendar</div>
+      <div class="tl-desc">强制立即更新消息，显示 "🔧 调用工具: feishu_calendar"</div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-time">T+2000ms</div>
+      <div class="tl-title">✅ 工具执行完成 · 第二轮推理</div>
+      <div class="tl-desc">工具结果加入消息 → textBuf.Reset() → LLM 再次推理生成最终回复</div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-time">T+3000ms</div>
+      <div class="tl-title">最终编辑完成回复</div>
+      <div class="tl-desc">editMarkdown(roomID, eventID, "你今天有3个会议...") → Markdown → HTML</div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ===== 6. TOOLS ===== -->
+<section>
+<div class="container">
+  <div class="section-label">06 — Capabilities</div>
+  <div class="section-title">工具层 Tools</div>
+  <div class="section-desc">统一的 Tool 接口 + Registry 注册中心，支持 Bash、微软待办、飞书 10 大工具集。</div>
+
+  <div class="card-grid card-grid-3">
+    <div class="card card-coral">
+      <div class="card-icon">$</div>
+      <h3>Bash</h3>
+      <p>Shell 命令执行，支持 sh/zsh/bash。30 秒超时保护，返回 stdout + stderr。</p>
+      <div class="mono">exec.Command("sh", "-c", cmd)</div>
+    </div>
+    <div class="card card-blue">
+      <div class="card-icon">✓</div>
+      <h3>Microsoft To-Do</h3>
+      <p>通过 Zeabur 代理调用 Graph API。支持 7 种操作：列表/任务的 CRUD。</p>
+      <div class="tag-row">
+        <span class="tag tag-b">list_lists</span>
+        <span class="tag tag-b">create_task</span>
+        <span class="tag tag-b">complete</span>
+      </div>
+    </div>
+    <div class="card card-green">
+      <div class="card-icon">F</div>
+      <h3>Feishu Suite</h3>
+      <p>飞书 10 大工具：日历、即时消息、任务、文档、云盘、多维表格、知识库、电子表格、搜索、群聊。</p>
+      <div class="tag-row">
+        <span class="tag tag-g">Calendar</span>
+        <span class="tag tag-g">IM</span>
+        <span class="tag tag-g">Docs</span>
+        <span class="tag tag-g">Drive</span>
+        <span class="tag tag-g">Bitable</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tool execution flow -->
+  <div class="diagram-wrap" style="margin-top:40px">
+    <svg viewBox="0 0 960 200" width="100%" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="arr5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+          <path d="M1 1L9 5L1 9" fill="none" stroke="context-stroke" stroke-width="1.8" stroke-linecap="round"/>
+        </marker>
+      </defs>
+
+      <!-- LLM returns tool_calls -->
+      <rect x="40" y="60" width="160" height="56" rx="10" fill="#F5F3FF" stroke="#7C3AED" stroke-width="1"/>
+      <text x="120" y="82" text-anchor="middle" font-family="DM Sans" font-size="12" fill="#5B21B6" font-weight="600">LLM Response</text>
+      <text x="120" y="102" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#A78BFA">tool_calls: [...]</text>
+
+      <line x1="200" y1="88" x2="250" y2="88" stroke="#7C3AED" stroke-width="1.2" marker-end="url(#arr5)"/>
+
+      <!-- OnToolCall callback -->
+      <rect x="254" y="60" width="140" height="56" rx="10" fill="#FFFBEB" stroke="#D97706" stroke-width="1"/>
+      <text x="324" y="82" text-anchor="middle" font-family="DM Sans" font-size="12" fill="#92400E" font-weight="600">OnToolCall</text>
+      <text x="324" y="100" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#D97706">notify channel</text>
+
+      <line x1="394" y1="88" x2="440" y2="88" stroke="#D97706" stroke-width="1.2" marker-end="url(#arr5)"/>
+
+      <!-- Registry dispatch -->
+      <rect x="444" y="60" width="170" height="56" rx="10" fill="#FFF7ED" stroke="#EA580C" stroke-width="1.2"/>
+      <text x="529" y="82" text-anchor="middle" font-family="DM Sans" font-size="12" fill="#9A3412" font-weight="600">Registry.Execute</text>
+      <text x="529" y="100" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#EA580C">tools[name].Execute()</text>
+
+      <line x1="614" y1="88" x2="660" y2="88" stroke="#EA580C" stroke-width="1.2" marker-end="url(#arr5)"/>
+
+      <!-- Result -->
+      <rect x="664" y="60" width="140" height="56" rx="10" fill="#F0FDF4" stroke="#16A34A" stroke-width="1"/>
+      <text x="734" y="82" text-anchor="middle" font-family="DM Sans" font-size="12" fill="#166534" font-weight="600">OnToolResult</text>
+      <text x="734" y="100" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#16A34A">→ add to messages</text>
+
+      <line x1="804" y1="88" x2="850" y2="88" stroke="#16A34A" stroke-width="1.2" marker-end="url(#arr5)"/>
+
+      <!-- Next round -->
+      <rect x="854" y="66" width="80" height="44" rx="22" fill="#F5F3FF" stroke="#7C3AED" stroke-width="1" stroke-dasharray="4 3"/>
+      <text x="894" y="93" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#7C3AED">Next ↻</text>
+
+      <!-- Error handling note -->
+      <text x="529" y="150" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#94A3B8">Error → "Error executing {name}: {err}" → LLM sees error and adjusts</text>
+    </svg>
+    <p class="diagram-caption">Fig 5. Tool execution flow — LLM → callback → registry dispatch → result → next round</p>
+  </div>
+</div>
+</section>
+
+<!-- ===== 7. SPEECH PROTOCOLS ===== -->
+<section style="background:var(--bg2)">
+<div class="container">
+  <div class="section-label">07 — Protocols</div>
+  <div class="section-title">语音协议详解</div>
+  <div class="section-desc">VolcEngine 自定义二进制 WebSocket 协议，ASR 和 TTS 各有独立的帧格式和事件流。</div>
+
+  <div class="two-col">
+    <div>
+      <h3 style="font-size:18px;margin-bottom:20px">ASR 二进制帧格式</h3>
+      <div class="diagram-wrap" style="margin-bottom:0">
+        <svg viewBox="0 0 400 220" width="100%" xmlns="http://www.w3.org/2000/svg">
+          <!-- Header bytes -->
+          <text x="200" y="24" text-anchor="middle" font-family="JetBrains Mono" font-size="11" fill="#64748B" font-weight="600">4-Byte Header</text>
+
+          <rect x="20" y="36" width="85" height="48" rx="4" fill="#EFF6FF" stroke="#BFDBFE" stroke-width="1"/>
+          <text x="62" y="56" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#1E40AF" font-weight="500">Byte 0</text>
+          <text x="62" y="72" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#60A5FA">ver | hdr_sz</text>
+
+          <rect x="115" y="36" width="85" height="48" rx="4" fill="#F5F3FF" stroke="#DDD6FE" stroke-width="1"/>
+          <text x="157" y="56" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#5B21B6" font-weight="500">Byte 1</text>
+          <text x="157" y="72" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#A78BFA">type | flags</text>
+
+          <rect x="210" y="36" width="85" height="48" rx="4" fill="#F0FDFA" stroke="#99F6E4" stroke-width="1"/>
+          <text x="252" y="56" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#115E59" font-weight="500">Byte 2</text>
+          <text x="252" y="72" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#2DD4BF">ser | comp</text>
+
+          <rect x="305" y="36" width="75" height="48" rx="4" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
+          <text x="342" y="56" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#64748B" font-weight="500">Byte 3</text>
+          <text x="342" y="72" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#94A3B8">reserved</text>
+
+          <!-- Message types -->
+          <text x="20" y="116" font-family="JetBrains Mono" font-size="10" fill="#64748B" font-weight="600">Message Types:</text>
+
+          <rect x="20" y="128" width="170" height="28" rx="4" fill="#EFF6FF" stroke="#BFDBFE" stroke-width=".8"/>
+          <text x="30" y="147" font-family="JetBrains Mono" font-size="10" fill="#1E40AF">0x01 FullClientRequest</text>
+
+          <rect x="200" y="128" width="170" height="28" rx="4" fill="#EFF6FF" stroke="#BFDBFE" stroke-width=".8"/>
+          <text x="210" y="147" font-family="JetBrains Mono" font-size="10" fill="#1E40AF">0x02 AudioOnly</text>
+
+          <rect x="20" y="164" width="170" height="28" rx="4" fill="#F0FDF4" stroke="#BBF7D0" stroke-width=".8"/>
+          <text x="30" y="183" font-family="JetBrains Mono" font-size="10" fill="#166534">0x09 ServerResponse</text>
+
+          <rect x="200" y="164" width="170" height="28" rx="4" fill="#FEF2F2" stroke="#FECACA" stroke-width=".8"/>
+          <text x="210" y="183" font-family="JetBrains Mono" font-size="10" fill="#DC2626">0x0F ServerError</text>
+        </svg>
+      </div>
+    </div>
+
+    <div>
+      <h3 style="font-size:18px;margin-bottom:20px">TTS V3 事件流</h3>
+      <div class="diagram-wrap" style="margin-bottom:0">
+        <svg viewBox="0 0 400 220" width="100%" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <marker id="arr6" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+              <path d="M1 2L8 5L1 8" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round"/>
+            </marker>
+          </defs>
+
+          <text x="80" y="20" text-anchor="middle" font-family="JetBrains Mono" font-size="11" fill="#2563EB" font-weight="600">Client</text>
+          <text x="320" y="20" text-anchor="middle" font-family="JetBrains Mono" font-size="11" fill="#16A34A" font-weight="600">Server</text>
+          <line x1="80" y1="28" x2="80" y2="210" stroke="#BFDBFE" stroke-width="1"/>
+          <line x1="320" y1="28" x2="320" y2="210" stroke="#BBF7D0" stroke-width="1"/>
+
+          <!-- Events -->
+          <line x1="82" y1="46" x2="318" y2="46" stroke="#2563EB" stroke-width="1" marker-end="url(#arr6)"/>
+          <text x="200" y="42" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#1E40AF">StartConnection (1)</text>
+
+          <line x1="318" y1="66" x2="82" y2="66" stroke="#16A34A" stroke-width="1" marker-end="url(#arr6)"/>
+          <text x="200" y="62" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#166534">ConnectionStarted (50)</text>
+
+          <line x1="82" y1="90" x2="318" y2="90" stroke="#2563EB" stroke-width="1" marker-end="url(#arr6)"/>
+          <text x="200" y="86" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#1E40AF">StartSession (100)</text>
+
+          <line x1="318" y1="110" x2="82" y2="110" stroke="#16A34A" stroke-width="1" marker-end="url(#arr6)"/>
+          <text x="200" y="106" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#166534">SessionStarted (150)</text>
+
+          <line x1="82" y1="134" x2="318" y2="134" stroke="#7C3AED" stroke-width="1.2" marker-end="url(#arr6)"/>
+          <text x="200" y="130" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#5B21B6" font-weight="600">TaskRequest (200, text)</text>
+
+          <line x1="318" y1="154" x2="82" y2="154" stroke="#D97706" stroke-width="1.2" marker-end="url(#arr6)"/>
+          <text x="200" y="150" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#92400E" font-weight="600">TTSResponse (352, PCM)</text>
+          <line x1="318" y1="168" x2="82" y2="168" stroke="#D97706" stroke-width="1" stroke-dasharray="3 3" marker-end="url(#arr6)"/>
+          <text x="340" y="164" font-family="JetBrains Mono" font-size="8" fill="#D97706">×N</text>
+
+          <line x1="82" y1="190" x2="318" y2="190" stroke="#64748B" stroke-width="1" marker-end="url(#arr6)"/>
+          <text x="200" y="186" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#64748B">FinishSession (102)</text>
+
+          <line x1="318" y1="206" x2="82" y2="206" stroke="#64748B" stroke-width="1" marker-end="url(#arr6)"/>
+          <text x="200" y="202" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#64748B">SessionFinished (152)</text>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- WebRTC Call Setup -->
+  <h3 style="font-size:18px;margin:48px 0 24px">WebRTC 通话建立流程</h3>
+  <div class="diagram-wrap">
+    <svg viewBox="0 0 960 190" width="100%" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="arr7" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+          <path d="M1 1L9 5L1 9" fill="none" stroke="context-stroke" stroke-width="1.8" stroke-linecap="round"/>
+        </marker>
+      </defs>
+
+      <!-- Steps -->
+      <rect x="20" y="50" width="130" height="72" rx="10" fill="#EFF6FF" stroke="#2563EB" stroke-width="1"/>
+      <text x="85" y="74" text-anchor="middle" font-family="DM Sans" font-size="11" fill="#1E40AF" font-weight="600">call.member</text>
+      <text x="85" y="92" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#60A5FA">MSC3401 event</text>
+      <text x="85" y="108" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#60A5FA">LiveKit focus URL</text>
+      <line x1="150" y1="86" x2="178" y2="86" stroke="#2563EB" stroke-width="1" marker-end="url(#arr7)"/>
+
+      <rect x="182" y="50" width="130" height="72" rx="10" fill="#F5F3FF" stroke="#7C3AED" stroke-width="1"/>
+      <text x="247" y="74" text-anchor="middle" font-family="DM Sans" font-size="11" fill="#5B21B6" font-weight="600">OpenID Token</text>
+      <text x="247" y="92" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#A78BFA">Matrix auth</text>
+      <text x="247" y="108" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#A78BFA">→ access_token</text>
+      <line x1="312" y1="86" x2="340" y2="86" stroke="#7C3AED" stroke-width="1" marker-end="url(#arr7)"/>
+
+      <rect x="344" y="50" width="130" height="72" rx="10" fill="#F0FDFA" stroke="#0D9488" stroke-width="1"/>
+      <text x="409" y="74" text-anchor="middle" font-family="DM Sans" font-size="11" fill="#115E59" font-weight="600">LiveKit JWT</text>
+      <text x="409" y="92" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#2DD4BF">POST /sfu/get</text>
+      <text x="409" y="108" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#2DD4BF">→ url + jwt</text>
+      <line x1="474" y1="86" x2="502" y2="86" stroke="#0D9488" stroke-width="1" marker-end="url(#arr7)"/>
+
+      <rect x="506" y="50" width="130" height="72" rx="10" fill="#FFFBEB" stroke="#D97706" stroke-width="1"/>
+      <text x="571" y="74" text-anchor="middle" font-family="DM Sans" font-size="11" fill="#92400E" font-weight="600">Publish State</text>
+      <text x="571" y="92" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#D97706">call.member PUT</text>
+      <text x="571" y="108" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#D97706">livekit_alias</text>
+      <line x1="636" y1="86" x2="664" y2="86" stroke="#D97706" stroke-width="1" marker-end="url(#arr7)"/>
+
+      <rect x="668" y="50" width="130" height="72" rx="10" fill="#FFF7ED" stroke="#EA580C" stroke-width="1"/>
+      <text x="733" y="74" text-anchor="middle" font-family="DM Sans" font-size="11" fill="#9A3412" font-weight="600">Connect Room</text>
+      <text x="733" y="92" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#EA580C">lksdk.Connect</text>
+      <text x="733" y="108" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#EA580C">subscribe tracks</text>
+      <line x1="798" y1="86" x2="826" y2="86" stroke="#EA580C" stroke-width="1" marker-end="url(#arr7)"/>
+
+      <rect x="830" y="56" width="108" height="60" rx="30" fill="#F0FDF4" stroke="#16A34A" stroke-width="1.2"/>
+      <text x="884" y="82" text-anchor="middle" font-family="DM Sans" font-size="12" fill="#166534" font-weight="600">Audio</text>
+      <text x="884" y="98" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#16A34A">Pipeline ▶</text>
+
+      <!-- Step numbers -->
+      <text x="85" y="43" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#94A3B8" font-weight="600">①</text>
+      <text x="247" y="43" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#94A3B8" font-weight="600">②</text>
+      <text x="409" y="43" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#94A3B8" font-weight="600">③</text>
+      <text x="571" y="43" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#94A3B8" font-weight="600">④</text>
+      <text x="733" y="43" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#94A3B8" font-weight="600">⑤</text>
+      <text x="884" y="43" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#94A3B8" font-weight="600">⑥</text>
+
+      <!-- Animated line -->
+      <line x1="20" y1="150" x2="938" y2="150" stroke="#E2E8F0" stroke-width="1"/>
+      <line x1="20" y1="150" x2="938" y2="150" stroke="url(#gT)" stroke-width="2" class="flow-dash"/>
+    </svg>
+    <p class="diagram-caption">Fig 6. WebRTC call setup — MSC3401 signaling → OpenID → LiveKit JWT → Room connect</p>
+  </div>
+</div>
+</section>
+
+<!-- ===== 8. EXTERNAL DEPS ===== -->
+<section>
+<div class="container">
+  <div class="section-label">08 — Integrations</div>
+  <div class="section-title">外部服务依赖</div>
+  <div class="section-desc">Agent 服务连接的所有外部端点和认证方式。</div>
+
+  <div class="diagram-wrap">
+    <svg viewBox="0 0 960 320" width="100%" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="arr8" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+          <path d="M1 1L9 5L1 9" fill="none" stroke="context-stroke" stroke-width="1.8" stroke-linecap="round"/>
+        </marker>
+      </defs>
+
+      <!-- Agent center -->
+      <rect x="350" y="110" width="220" height="80" rx="16" fill="#F5F3FF" stroke="#7C3AED" stroke-width="2"/>
+      <circle cx="386" cy="150" r="14" fill="#7C3AED"/>
+      <text x="386" y="155" text-anchor="middle" font-family="DM Sans" font-size="14" fill="#fff" font-weight="700">A</text>
+      <text x="470" y="143" text-anchor="middle" font-family="DM Sans" font-size="16" fill="#5B21B6" font-weight="600">Agent Service</text>
+      <text x="470" y="165" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#A78BFA">Go · :3100 · Docker</text>
+
+      <!-- External services -->
+      <!-- Top row -->
+      <rect x="60" y="20" width="180" height="52" rx="10" fill="#F0FDFA" stroke="#99F6E4" stroke-width="1"/>
+      <text x="150" y="43" text-anchor="middle" font-family="DM Sans" font-size="12" fill="#115E59" font-weight="600">Anthropic / newapi</text>
+      <text x="150" y="60" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#2DD4BF">LLM SSE · x-api-key</text>
+      <line x1="240" y1="52" x2="350" y2="120" stroke="#0D9488" stroke-width="1" stroke-dasharray="4 3" marker-end="url(#arr8)"/>
+
+      <rect x="380" y="10" width="200" height="52" rx="10" fill="#EFF6FF" stroke="#BFDBFE" stroke-width="1"/>
+      <text x="480" y="33" text-anchor="middle" font-family="DM Sans" font-size="12" fill="#1E40AF" font-weight="600">Matrix Homeserver</text>
+      <text x="480" y="50" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#60A5FA">Bearer token · sync</text>
+      <line x1="480" y1="62" x2="470" y2="110" stroke="#2563EB" stroke-width="1" stroke-dasharray="4 3" marker-end="url(#arr8)"/>
+
+      <rect x="700" y="20" width="200" height="52" rx="10" fill="#FFFBEB" stroke="#FDE68A" stroke-width="1"/>
+      <text x="800" y="43" text-anchor="middle" font-family="DM Sans" font-size="12" fill="#92400E" font-weight="600">VolcEngine Speech</text>
+      <text x="800" y="60" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#D97706">ASR + TTS · WebSocket</text>
+      <line x1="700" y1="52" x2="570" y2="120" stroke="#D97706" stroke-width="1" stroke-dasharray="4 3" marker-end="url(#arr8)"/>
+
+      <!-- Bottom row -->
+      <rect x="100" y="240" width="180" height="52" rx="10" fill="#F0FDF4" stroke="#BBF7D0" stroke-width="1"/>
+      <text x="190" y="263" text-anchor="middle" font-family="DM Sans" font-size="12" fill="#166534" font-weight="600">Feishu Open API</text>
+      <text x="190" y="280" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#16A34A">tenant_token · 10 tools</text>
+      <line x1="250" y1="252" x2="370" y2="190" stroke="#16A34A" stroke-width="1" stroke-dasharray="4 3" marker-end="url(#arr8)"/>
+
+      <rect x="400" y="250" width="160" height="52" rx="10" fill="#FFF7ED" stroke="#FED7AA" stroke-width="1"/>
+      <text x="480" y="273" text-anchor="middle" font-family="DM Sans" font-size="12" fill="#9A3412" font-weight="600">MS Todo Proxy</text>
+      <text x="480" y="290" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#EA580C">X-Api-Secret · Zeabur</text>
+      <line x1="480" y1="250" x2="470" y2="190" stroke="#EA580C" stroke-width="1" stroke-dasharray="4 3" marker-end="url(#arr8)"/>
+
+      <rect x="660" y="240" width="200" height="52" rx="10" fill="#F5F3FF" stroke="#DDD6FE" stroke-width="1"/>
+      <text x="760" y="263" text-anchor="middle" font-family="DM Sans" font-size="12" fill="#5B21B6" font-weight="600">LiveKit Focus</text>
+      <text x="760" y="280" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#A78BFA">JWT · WebRTC rooms</text>
+      <line x1="680" y1="252" x2="550" y2="190" stroke="#7C3AED" stroke-width="1" stroke-dasharray="4 3" marker-end="url(#arr8)"/>
+    </svg>
+    <p class="diagram-caption">Fig 7. External service topology — all endpoints and auth methods</p>
+  </div>
+</div>
+</section>
+
+<!-- ===== 9. DEPLOYMENT ===== -->
+<section style="background:var(--bg2)">
+<div class="container">
+  <div class="section-label">09 — Deployment</div>
+  <div class="section-title">部署与性能</div>
+  <div class="section-desc">Docker 多阶段构建，Alpine 运行时，SQLite 持久化，环境变量配置。</div>
+
+  <div class="two-col">
+    <div>
+      <h3 style="font-size:18px;margin-bottom:20px">Docker 多阶段构建</h3>
+      <div class="code-block" style="font-size:11px">
+<span class="cm"># Stage 1: Builder</span>
+<span class="kw">FROM</span> golang:1.25-alpine <span class="kw">AS</span> builder
+<span class="kw">RUN</span> apk add git opus-dev gcc musl-dev
+<span class="kw">RUN</span> CGO_ENABLED=1 go build \
+    -ldflags <span class="str">"-X '...BuildCommitMsg=${COMMIT}'"</span> \
+    -o agent ./cmd/agent/
+
+<span class="cm"># Stage 2: Runtime</span>
+<span class="kw">FROM</span> alpine:3.21
+<span class="kw">RUN</span> apk add ca-certificates ffmpeg opus-dev bash
+<span class="kw">COPY</span> --from=builder /build/agent .
+<span class="kw">EXPOSE</span> 3100
+<span class="kw">CMD</span> [<span class="str">"./agent"</span>]
+      </div>
+    </div>
+
+    <div>
+      <h3 style="font-size:18px;margin-bottom:20px">性能参数</h3>
+      <table class="proto-table">
+        <tr><th>指标</th><th>值</th></tr>
+        <tr><td>Max tool rounds</td><td><code>10</code></td></tr>
+        <tr><td>Matrix 消息节流</td><td><code>500ms</code></td></tr>
+        <tr><td>Bash timeout</td><td><code>30s</code></td></tr>
+        <tr><td>TTS first chunk</td><td><code>~900ms</code></td></tr>
+        <tr><td>Voice segment</td><td><code>5s</code></td></tr>
+        <tr><td>Opus frame</td><td><code>20ms</code></td></tr>
+        <tr><td>Feishu token TTL</td><td><code>7200s</code></td></tr>
+        <tr><td>E2E voice latency</td><td><code>10-50s</code></td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- File tree -->
+  <h3 style="font-size:18px;margin:48px 0 20px">Go 文件清单（24 个）</h3>
+  <div class="card-grid card-grid-2">
+    <div class="card card-blue" style="padding:20px">
+      <h3 style="font-size:14px;margin-bottom:12px">cmd/ — 可执行入口</h3>
+      <div style="font-family:'JetBrains Mono';font-size:11px;color:var(--text2);line-height:2">
+        agent/main.go &nbsp;<span class="tag tag-b">主服务</span><br>
+        voicetest/main.go &nbsp;<span class="tag tag-b">语音诊断</span><br>
+        ttstest/main.go &nbsp;<span class="tag tag-b">TTS 测试</span><br>
+        matrix_test/main.go &nbsp;<span class="tag tag-b">Matrix 测试</span>
+      </div>
+    </div>
+    <div class="card card-purple" style="padding:20px">
+      <h3 style="font-size:14px;margin-bottom:12px">internal/ — 核心实现（20 个）</h3>
+      <div style="font-family:'JetBrains Mono';font-size:11px;color:var(--text2);line-height:2">
+        adapter/ &nbsp;<span class="tag tag-p">types.go</span> <span class="tag tag-p">anthropic.go</span><br>
+        agent/ &nbsp;<span class="tag tag-p">loop.go</span><br>
+        channels/ &nbsp;<span class="tag tag-t">api.go</span> <span class="tag tag-t">matrix.go</span> <span class="tag tag-t">voicecall.go</span> <span class="tag tag-t">version.go</span><br>
+        speech/ &nbsp;<span class="tag tag-a">client.go</span> <span class="tag tag-a">protocol.go</span> <span class="tag tag-a">transcribe.go</span> <span class="tag tag-a">tts.go</span><br>
+        tools/ &nbsp;<span class="tag tag-c">registry.go</span> <span class="tag tag-c">bash.go</span> <span class="tag tag-c">mstodo.go</span> <span class="tag tag-c">stt.go</span><br>
+        tools/feishu/ &nbsp;<span class="tag tag-g">auth.go</span> <span class="tag tag-g">tools.go</span><br>
+        config/ session/ skills/ &nbsp;<span style="color:var(--text3)">各 1 个</span>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<footer>
+  Agent Platform Architecture Documentation &middot; Generated from ARCHITECTURE.md · DATA-FLOW.md · PROTOCOLS.md · DEPLOYMENT.md
+</footer>
+
+</body>
+</html>
